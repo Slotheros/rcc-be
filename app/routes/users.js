@@ -19,7 +19,20 @@ router.get('/:id', function(req, res) {
 
 // Add a new user to the database
 router.post('/', function(req, res){
-  db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, activityID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)' , ["Rana", "Vemireddy", "rxv4834@rit.edu", "201-788-9497", 1, 1, "Passw0rd", 1], function(error, results, fields){
+  var fname = req.body.fName; 
+  var lname = req.body.lName; 
+  var email = req.body.email; 
+  var phone = req.body.phoneNum; 
+  var department = req.body.department; 
+  var password = req.body.password;
+  
+  //validate the request data
+
+  //insert the registrant into the database
+  db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+    [fname, lname, email, phone, department? department.id : null, 3, password, 1], 
+    function(error, results, fields){
     if(error){
       res.send(error);
     }
