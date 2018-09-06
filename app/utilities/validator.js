@@ -1,21 +1,48 @@
+// is null
+// is string
+// regex
 function validateName(name){
-	return true; 
+	var regex = '^[A-Za-z][A-Za-z\\\'\\-]+([\\ A-Za-z][A-Za-z\\\'\\-]+)*';
+	return validateField(name, regex);
 }
 
 function validateEmail(email){
-	return true; 
+    var regex = '^(([^<>()\\[\\]\\\\.,;:\\s@"]+(\\.[^<>()\\[\\]\\\\.,;:\\s@"]+)*)|(".+"))@((\\[[0-9]' +
+        '{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$';
+    return validateField(email, regex);
 }
 
 function validatePhoneNumber(phone){
-	return true; 
+    var regex = '^(\\+\\d{1,2})?\\d{10}$';
+    return validateField(phone, regex);
 }
 
 function validateDepartment(department){
-	return true; 
+	//obj is not null
+	//proprties not null
+    if (department) {
+    	if (department.name && department.id) {
+    		return true;
+		}
+	}
+	return false;
 }
 
 function validatePassword(password){
-	return true; 
+    var regex = '((?=.*\\d)(?=.*[A-Z])(?=.*\\W).{8,})';
+    return validateField(password, regex);
+}
+
+function validateField(value, regex = null) {
+	if (value) {
+        if (typeof value === 'string') {
+			if (regex) {
+				expression = new RegExp('regex');
+				return expression.test(value);
+			}
+        }
+	}
+	return false;
 }
 
 function validateRegistrant(fname, lname, email, phone, department, password){
