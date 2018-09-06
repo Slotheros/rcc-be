@@ -6,15 +6,15 @@ const db = require('../utilities/db');
 router.get('/', function(req, res) {
   db.query('SELECT * FROM employee', [], function(error, results, fields){
     if(error){
-      res.send(error);
+      return res.status(404).send(error);
     }
-    res.send(results);
+    return res.send(results);
   });
 });
 
 // Return info for specified user
 router.get('/:id', function(req, res) {
-  res.send('Get specified user');
+  return res.send('Get specified user');
 });
 
 // Add a new user to the database
@@ -34,9 +34,9 @@ router.post('/', function(req, res){
     [fname, lname, email, phone, department? department.id : null, 3, password, 1], 
     function(error, results, fields){
     if(error){
-      res.send(error);
+      return res.status(403).send(error);
     }
-    res.send(results);
+    return res.send(results);
   });
 });
 
