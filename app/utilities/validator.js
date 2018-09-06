@@ -37,7 +37,7 @@ function validateField(value, regex = null) {
 	if (value) {
         if (typeof value === 'string') {
 			if (regex) {
-				expression = new RegExp('regex');
+				expression = new RegExp(regex);
 				return expression.test(value);
 			}
         }
