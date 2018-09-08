@@ -1,5 +1,8 @@
 const mysql = require('mysql');
 
+/**
+ * Creates connection pool
+ */
 const pool = mysql.createPool({
   connectionLimit: 10,
   host: '129.21.183.59',
@@ -8,4 +11,7 @@ const pool = mysql.createPool({
   database: 'rrcc'
 });
 
+/**
+ * Exports the connection pool to be user by server.js
+ */
 module.exports = pool;
