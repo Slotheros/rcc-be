@@ -9,6 +9,14 @@
             "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}/server.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program with Nodemon",
+            "program": "${workspaceRoot}/node_modules/nodemon/bin/nodemon.js",
+            "args": ["${workspaceRoot}/server.js"],
         }
     ]
 }
+
