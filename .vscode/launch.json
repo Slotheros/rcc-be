@@ -16,6 +16,7 @@
             "name": "Launch Program with Nodemon",
             "program": "${workspaceRoot}/node_modules/nodemon/bin/nodemon.js",
             "args": ["${workspaceRoot}/server.js"],
+            "runtimeArgs": ["--nolazy"]
         }
     ]
 }
