@@ -2,11 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../utilities/db');
 const validator = require('../utilities/validator');
+var customErrorMsg = "";
 
-/**
- * Endpoint for getting all users
- * Returns all users from the DB
- */
+
+// Returns all users info
 router.get('/', function(req, res) {
   db.query('SELECT * FROM employee', [], function(error, results, fields){
     if(error){
@@ -16,24 +15,12 @@ router.get('/', function(req, res) {
   });
 });
 
-/**
- * Endpoint for getting a user's information
- * Returns all of user's information
- * @param id - the user's id in the DB
- */
+// Return info for specified user
 router.get('/:id', function(req, res) {
   return res.send('Get specified user');
 });
 
-/**
- * Endpoint for adding a new user to the DB
- * @param fname - user's first name
- * @param lname - user's last name
- * @param email - user's email address
- * @param phone - user's phone number
- * @param department - user's department
- * @param password - user's password
- */
+// Add a new user to the database
 router.post('/', function(req, res){
   var fname = req.body.fName; 
   var lname = req.body.lName; 
@@ -41,27 +28,28 @@ router.post('/', function(req, res){
   var phone = req.body.phoneNum; 
   var department = req.body.department; 
   var password = req.body.password;
+
   
-  // Validate the request data
+  //validate the request data
   var valid = validator.validateRegistrant(fname, lname, email, phone, department, password); 
 
-  valid.then(success => { // Validation passed
-    // Insert the registrant into the database
+  valid.then(success => {
+    //validation passed
+    //insert the registrant into the database
     db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
       [fname, lname, email, phone, department? department.id : null, 3, password, 1], 
       function(error, results, fields){
       if(error){
-        return res.status(403).send(error);
+        customErrorMsg = "There was an error inserting this record into the database. Please try again."
+        return res.status(403).send(customErrorMsg);
       }
       return res.send(results);
     });
-  }, err => { // Validation failed
+  }, err => {
+    //validation failed
     return res.status(403).send("Invalid registrant info"); 
   })
 });
 
-/**
- * Exports the router for use in db.js to listen to members of the connection pool
- */
 module.exports = router;
