@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport'); 
 const db = require('../utilities/db');
-const validator = require('../utilities/validator');
+const validator = require('../utilities/validator');2
+var customErrorMsg = "";
 
 /**
  * Endpoint for getting all users
@@ -11,6 +12,7 @@ const validator = require('../utilities/validator');
 router.get('/getUsers', function(req, res) {
   db.query('SELECT * FROM employee', [], function(error, results, fields){
     if(error){
+      error.errMsg = "Can't list of users"; 
       return res.status(404).send(error);
     }
     return res.send(results);
@@ -42,18 +44,20 @@ router.post('/register', function(req, res){
   var phone = req.body.phoneNum; 
   var department = req.body.department; 
   var password = req.body.password;
+
   
-  // Validate the request data
+  //validate the request data
   var valid = validator.validateRegistrant(fname, lname, email, phone, department, password); 
 
-  valid.then(success => { // Validation passed
-    // Insert the registrant into the database
+  valid.then(success => {
+    //validation passed
+    //insert the registrant into the database
     db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
       [fname, lname, email, phone, department? department.id : null, 3, password, 1], 
       function(error, results, fields){
       if(error){
-        error.errMsg = "Database error"; 
+        error.errMsg = "There was an error inserting this record into the database. Please try again."; 
         return res.status(403).send(error);
       }
       return res.send(results);
@@ -63,7 +67,4 @@ router.post('/register', function(req, res){
   })
 });
 
-/**
- * Exports the router for use in db.js to listen to members of the connection pool
- */
 module.exports = router;
