@@ -37,4 +37,15 @@ User.findOne = function(user, callback){
   );
 }
 
+User.userWithoutPwd = function(user){
+  return {
+    fname: user.fname, 
+    lname: user.lname, 
+    email: user.email, 
+    phone: user.phone,
+    department: user.department, 
+    usertype: user.usertype
+  };
+}
+
 module.exports = User; 

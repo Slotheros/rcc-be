@@ -19,7 +19,7 @@ require('./app/utilities/passport-config')(passport);
 app.use(session({
   secret: 'this is the secret', 
   resave: false, 
-  saveUninitialized: false
+  saveUninitialized: true
 }));
 app.use(cookieParser());
 app.use(passport.initialize());
@@ -30,7 +30,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Allows for Cross-Origin Resource Sharing
-app.use(cors()); 
+app.use(cors({
+  origin: ['http://localhost:4200'], 
+  credentials: true})); 
 
 //Check that the user is authenticated
 function ensureAuthenticated(req, res, next) {
