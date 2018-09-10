@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport'); 
 const db = require('../utilities/db');
 const validator = require('../utilities/validator');
 
@@ -7,7 +8,7 @@ const validator = require('../utilities/validator');
  * Endpoint for getting all users
  * Returns all users from the DB
  */
-router.get('/', function(req, res) {
+router.get('/getUsers', function(req, res) {
   db.query('SELECT * FROM employee', [], function(error, results, fields){
     if(error){
       return res.status(404).send(error);
@@ -21,7 +22,7 @@ router.get('/', function(req, res) {
  * Returns all of user's information
  * @param id - the user's id in the DB
  */
-router.get('/:id', function(req, res) {
+router.get('/getUser/:id', function(req, res) {
   return res.send('Get specified user');
 });
 
@@ -34,7 +35,7 @@ router.get('/:id', function(req, res) {
  * @param department - user's department
  * @param password - user's password
  */
-router.post('/', function(req, res){
+router.post('/register', function(req, res){
   var fname = req.body.fName; 
   var lname = req.body.lName; 
   var email = req.body.email; 
@@ -52,12 +53,13 @@ router.post('/', function(req, res){
       [fname, lname, email, phone, department? department.id : null, 3, password, 1], 
       function(error, results, fields){
       if(error){
+        error.errMsg = "Database error"; 
         return res.status(403).send(error);
       }
       return res.send(results);
     });
   }, err => { // Validation failed
-    return res.status(403).send("Invalid registrant info"); 
+    return res.status(403).send({errMsg: "Invalid registrant info"}); 
   })
 });
 
