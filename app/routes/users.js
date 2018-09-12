@@ -1,27 +1,43 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport'); 
 const db = require('../utilities/db');
-const validator = require('../utilities/validator');
+const validator = require('../utilities/validator');2
 var customErrorMsg = "";
 
-
-// Returns all users info
-router.get('/', function(req, res) {
+/**
+ * Endpoint for getting all users
+ * Returns all users from the DB
+ */
+router.get('/getUsers', function(req, res) {
   db.query('SELECT * FROM employee', [], function(error, results, fields){
     if(error){
+      error.errMsg = "Can't list of users"; 
       return res.status(404).send(error);
     }
     return res.send(results);
   });
 });
 
-// Return info for specified user
-router.get('/:id', function(req, res) {
+/**
+ * Endpoint for getting a user's information
+ * Returns all of user's information
+ * @param id - the user's id in the DB
+ */
+router.get('/getUser/:id', function(req, res) {
   return res.send('Get specified user');
 });
 
-// Add a new user to the database
-router.post('/', function(req, res){
+/**
+ * Endpoint for adding a new user to the DB
+ * @param fname - user's first name
+ * @param lname - user's last name
+ * @param email - user's email address
+ * @param phone - user's phone number
+ * @param department - user's department
+ * @param password - user's password
+ */
+router.post('/register', function(req, res){
   var fname = req.body.fName; 
   var lname = req.body.lName; 
   var email = req.body.email; 
@@ -41,14 +57,13 @@ router.post('/', function(req, res){
       [fname, lname, email, phone, department? department.id : null, 3, password, 1], 
       function(error, results, fields){
       if(error){
-        customErrorMsg = "There was an error inserting this record into the database. Please try again."
-        return res.status(403).send(customErrorMsg);
+        error.errMsg = "There was an error inserting this record into the database. Please try again."; 
+        return res.status(403).send(error);
       }
       return res.send(results);
     });
-  }, err => {
-    //validation failed
-    return res.status(403).send("Invalid registrant info"); 
+  }, err => { // Validation failed
+    return res.status(403).send({errMsg: "Invalid registrant info"}); 
   })
 });
 

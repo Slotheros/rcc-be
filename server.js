@@ -1,24 +1,53 @@
 const express = require('express');
-const path = require('path');
-const mysql = require('mysql');
 const bodyParser = require('body-parser');
+const passport = require('passport'); 
+const cookieParser = require('cookie-parser');
+const session = require('express-session'); 
+const cors = require('cors'); 
 
+//Custom Routes
 const usersRoute = require('./app/routes/users');
+const authRoute = require('./app/routes/auth');
 
 const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
 
-// Fixes the CORS issue. Don't ask me how it works.
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//Configure Passport
+require('./app/utilities/passport-config')(passport);
+
+
+//Cookie and session
+app.use(session({
+  secret: 'this is the secret', 
+  resave: false, 
+  saveUninitialized: true
+}));
+app.use(cookieParser());
+app.use(passport.initialize());
+app.use(passport.session());
+
+//Body Parser
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Allows for Cross-Origin Resource Sharing
+app.use(cors({
+  origin: ['http://localhost:4200'], 
+  credentials: true})); 
+
+//Check that the user is authenticated
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.status(401).send("Please login first")
+}
+app.all('*', function(req,res,next){
+  if (req.path === '/users/register' || req.path === '/auth/login')
     next();
-  });
+  else
+    ensureAuthenticated(req,res,next);  
+});
 
 // Routes
 app.use('/users', usersRoute);
-
-app.get('*', (req, res) => res.send('This is the RCC backend'));
+app.use('/auth', authRoute); 
 
 app.listen(3000, () => console.log('Running on port 3000'));
