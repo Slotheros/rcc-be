@@ -8,6 +8,7 @@ const cors = require('cors');
 //Custom Routes
 const usersRoute = require('./app/routes/users');
 const authRoute = require('./app/routes/auth');
+const alertsRoute = require('./app/routes/alerts');
 
 const app = express();
 
@@ -40,7 +41,7 @@ function ensureAuthenticated(req, res, next) {
   res.status(401).send("Please login first")
 }
 app.all('*', function(req,res,next){
-  if (req.path === '/users/register' || req.path === '/auth/login')
+  if (req.path === '/users/register' || req.path === '/auth/login' || req.path === '/alerts/sms')
     next();
   else
     ensureAuthenticated(req,res,next);  
@@ -49,5 +50,6 @@ app.all('*', function(req,res,next){
 // Routes
 app.use('/users', usersRoute);
 app.use('/auth', authRoute); 
+app.use('/alerts', alertsRoute); 
 
 app.listen(3000, () => console.log('Running on port 3000'));

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport'); 
 const db = require('../utilities/db');
-const validator = require('../utilities/validator');2
+const validator = require('../utilities/validator');
 var customErrorMsg = "";
 
 /**
@@ -18,6 +18,26 @@ router.get('/getUsers', function(req, res) {
     return res.send(results);
   });
 });
+
+
+//
+//
+// router.get('/getUserPhone', function(req, res) {
+  // Download the helper library from https://www.twilio.com/docs/node/install
+// Your Account Sid and Auth Token from twilio.com/console
+// var phone = req.body.phoneNum; 
+// var department = req.body.department; 
+
+// db.query('SELECT  FROM employee WHERE departmentID IN (?)', [department], function(error, results, fields){
+//   if(error){
+//     error.errMsg = "Can't list of users"; 
+//     return res.status(404).send(error);
+//   }
+//   return res.send(results);
+//   })
+// });
+
+
 
 /**
  * Endpoint for getting a user's information
