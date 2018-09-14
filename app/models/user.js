@@ -1,4 +1,3 @@
-const express = require('express'); 
 const db = require('../utilities/db');
 
 function User(fname, lname, email, phone, department, usertype, password){

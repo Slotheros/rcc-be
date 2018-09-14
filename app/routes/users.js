@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport'); 
 const db = require('../utilities/db');
-const validator = require('../utilities/validator');2
-var customErrorMsg = "";
+const validator = require('../utilities/validator');
 
 /**
  * Endpoint for getting all users
