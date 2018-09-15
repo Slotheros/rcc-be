@@ -11,7 +11,7 @@ const authToken = '5320f6abff74555ebdb46f3f09964e45';
 const client = require('twilio')(accountSid, authToken);
 
 router.post('/sms', function(req, res) {
-    var smsMessage = req.body.message; 
+    var smsMessage = req.body.message;
     client.messages
     .create({
         body: smsMessage,
