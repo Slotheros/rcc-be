@@ -11,10 +11,10 @@ const authToken = '5320f6abff74555ebdb46f3f09964e45';
 const client = require('twilio')(accountSid, authToken);
 
 router.post('/sms', function(req, res) {
-    console.log("Hit"); 
+    var smsMessage = req.body.message; 
     client.messages
     .create({
-        body: 'This is the ship that made the Kessel Run in fourteen parsecs?',
+        body: smsMessage,
         from: '+15853022896',
         to: '+15855067179'
     })
