@@ -1,5 +1,6 @@
 const express = require('express'); 
 const db = require('../utilities/db');
+const bcrypt = require('bcrypt-nodejs'); 
 
 function User(fname, lname, email, phone, department, usertype, password){
   this.fname = fname; 
@@ -8,10 +9,50 @@ function User(fname, lname, email, phone, department, usertype, password){
   this.phone = phone; 
   this.department = department; 
   this.usertype = usertype; 
-  this.password = password; 
+  this.password = password;
+
+  //checks if the password matches the value stored in the db
   this.validPassword = function(password){
-    return this.password == password; 
+    var valid = bcrypt.compareSync(password, this.password);
+    return valid; 
   }
+}
+
+User.create = function(user){
+  return new Promise((resolve, reject) => {
+    user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(8));
+    db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+      [user.fname, user.lname, user.email, user.phone, user.department? user.department.id : null, 3, user.password, 1], 
+      function(error, results, fields){
+        if(error){
+          error.errMsg = "There was an error inserting this record into the database. Please try again."; 
+          reject(error); 
+        }
+        resolve(results);
+      }
+    );
+  });
+}
+
+User.findAllInDepts = function(departments){
+  //generate array of department ids
+  var ids = []; 
+  var where = "("; 
+  for(dept in departments){
+    where += "?,"; 
+    ids.push(departments[dept].id); 
+  }
+  where = where.slice(0, where.length-1) + ");"; 
+  return new Promise((resolve, reject) => {
+    db.query("SELECT * FROM employee WHERE departmentID IN " + where, ids, function(error, results, fields){
+      if(error){
+        error.errMsg = "Can't get list of users in this department"; 
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  });
 }
 
 //takes in a user object and searches the employee table for it
