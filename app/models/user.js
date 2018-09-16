@@ -70,6 +70,35 @@ User.findAllInDepts = function(departments){
   });
 }
 
+User.findPhonesInDepts = function(departments){
+  //generate array of department ids
+  var params = []; 
+  var where = "("; 
+  for(dept in departments){
+    where += "?,"; 
+    params.push(departments[dept].id); 
+  }
+  where = where.slice(0, where.length-1) + ")"; 
+  
+  //status value
+  params.push(1); 
+  return new Promise((resolve, reject) => {
+    db.query("SELECT phone FROM employee WHERE " + 
+      "(departmentID IN " + where + ") " +
+      "AND (status = 1);", params, function(error, results, fields){
+      if(error){
+        error.errMsg = "Can't get list of users in this department"; 
+        reject(error); 
+      }
+      var phoneArray = []; 
+      for(r in results){
+        phoneArray.push(results[r].phone);
+      }
+      resolve(phoneArray); 
+    });
+  });
+}
+
 //takes in a user object and searches the employee table for it
 User.findOne = function(user, callback){
   var userData; 
