@@ -83,13 +83,17 @@ User.findOne = function(user, callback){
         reject(error); 
       }
       userData = results[0];
-      resolve(); 
+      if(userData == undefined || userData == null){
+        reject({errMsg: "This user doesn't exist in the database"});
+      } else{
+        resolve(); 
+      }
     })
   }).then(success => 
     callback(null, new User(userData.fname, userData.lname, userData.email, userData.phone,
       {id: userData.departmentID, name: userData.department}, 
       {id: userData.usertypeID, name: userData.usertype}, userData.password)), 
-    err => callback(error, null)
+    err => callback(err, null)
   );
 }
 
