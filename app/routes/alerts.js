@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+var User = require('../models/user');
 
 //test account
 // const accountSid = 'AC54371bd8095f177b5524f49ef0a7f4f1';
@@ -12,14 +13,26 @@ const client = require('twilio')(accountSid, authToken);
 
 router.post('/sms', function(req, res) {
     var smsMessage = req.body.message;
-    client.messages
-    .create({
-        body: smsMessage,
-        from: '+15853022896',
-        to: '+15855067179'
-    })
-    .then(message => console.log(message.sid))
-    .done(res.send());
+    var departments = req.body.departments;
+    //pass in department array array to user->findPhones
+    //returns list of numbers
+    var phoneNumbers = User.findPhonesInDepts(departments);
+    phoneNumbers.then(function(numbers){
+        numbers.forEach(function(number){
+            console.log("check: " + number);
+            var message = client.messages.create({
+              body: smsMessage,
+              from: '+15853022896',
+              to: number
+            })
+            .then(message =>  console.log(message.status))
+            .done();
+        });
+        return res.status(200).send(numbers);         
+    }, function(error){
+        console.log(error);
+        return res.status(400).send(); 
+    });  
 });
 
 module.exports = router; 
