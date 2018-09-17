@@ -4,6 +4,16 @@ const passport = require('passport');
 const db = require('../utilities/db');
 const validator = require('../utilities/validator');
 var User = require('../models/user');
+var multer = require('multer');
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './app/uploads')
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + '.csv'); 
+  }
+})
+var upload = multer({ storage: storage }).single('csvCompare');
 
 /**
  * Endpoint for getting all users
@@ -85,5 +95,18 @@ router.post('/register', function(req, res){
     return res.status(403).send({errMsg: "Invalid registrant info"}); 
   });
 });
+
+router.post('/csvCompare', function(req, res){
+  upload(req, res, function (err) {
+    if (err) {
+      // An error occurred when uploading
+      console.log(err);
+      return res.status(422).send("an Error occured")
+    }  
+   // No error occured.
+    var path = req.file.path;
+    return res.send("Upload Completed for " + path); 
+  }); 
+}); 
 
 module.exports = router;

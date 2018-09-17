@@ -17,9 +17,15 @@ function User(fname, lname, email, phone, department, usertype, password){
   }
 }
 
+/**
+ * Creates a new user entry in the database.
+ * @param {User} user 
+ */
 User.create = function(user){
   return new Promise((resolve, reject) => {
+    //encrypts the password
     user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(8));
+
     db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
       [user.fname, user.lname, user.email, user.phone, user.department? user.department.id : null, 3, user.password, 1], 
@@ -34,6 +40,10 @@ User.create = function(user){
   });
 }
 
+/**
+ * Gets a list of all users that are in the specified departments and are active employees. 
+ * @param {*} departments 
+ */
 User.findAllInDepts = function(departments){
   //generate array of department ids
   var params = []; 
@@ -46,6 +56,7 @@ User.findAllInDepts = function(departments){
   
   //status value
   params.push(1); 
+
   return new Promise((resolve, reject) => {
     db.query("SELECT emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
       "role.usertypeID, role.usertype FROM employee AS emp JOIN " + 
@@ -69,6 +80,11 @@ User.findAllInDepts = function(departments){
   });
 }
 
+/**
+ * Gets a list of the phone numbers of all the users that are in the specified departments 
+ * and are active employees. 
+ * @param {*} departments 
+ */
 User.findPhonesInDepts = function(departments){
   //generate array of department ids
   var params = []; 
@@ -81,6 +97,7 @@ User.findPhonesInDepts = function(departments){
   
   //status value
   params.push(1); 
+
   return new Promise((resolve, reject) => {
     db.query("SELECT phone FROM employee WHERE " + 
       "(departmentID IN " + where + ") " +
@@ -98,7 +115,11 @@ User.findPhonesInDepts = function(departments){
   });
 }
 
-//takes in a user object and searches the employee table for it
+/**
+ * Takes in a user object and searches the employee table for a match
+ * @param {User} user 
+ * @param {*} callback 
+ */
 User.findOne = function(user, callback){
   var userData; 
   new Promise((resolve, reject) => {
@@ -125,6 +146,10 @@ User.findOne = function(user, callback){
   );
 }
 
+/**
+ * Returns an object that contains all of the information in a User object sans password.
+ * @param {User} user 
+ */
 User.userWithoutPwd = function(user){
   return {
     fname: user.fname, 
