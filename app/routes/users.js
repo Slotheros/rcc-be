@@ -3,6 +3,7 @@ const router = express.Router();
 const passport = require('passport'); 
 const db = require('../utilities/db');
 const validator = require('../utilities/validator');
+var User = require('../models/user');
 
 /**
  * Endpoint for getting all users
@@ -17,6 +18,35 @@ router.get('/getUsers', function(req, res) {
     return res.send(results);
   });
 });
+
+
+//
+//
+// router.get('/getUserPhone', function(req, res) {
+  // Download the helper library from https://www.twilio.com/docs/node/install
+// Your Account Sid and Auth Token from twilio.com/console
+// var phone = req.body.phoneNum; 
+// var department = req.body.department; 
+
+// db.query('SELECT  FROM employee WHERE departmentID IN (?)', [department], function(error, results, fields){
+//   if(error){
+//     error.errMsg = "Can't list of users"; 
+//     return res.status(404).send(error);
+//   }
+//   return res.send(results);
+//   })
+// });
+
+
+router.post('/getUsersByDepts', function(req, res) {
+  var depts = req.body.departments;
+  //perform validation on the departments
+  User.findAllInDepts(depts).then(success => {
+    return res.send(success); 
+  }, error => {
+    return res.status(403).send(error); 
+  }); 
+})
 
 /**
  * Endpoint for getting a user's information
@@ -50,20 +80,18 @@ router.post('/register', function(req, res){
 
   valid.then(success => {
     //validation passed
+    //create User
+    var user = new User(fname, lname, email, phone, department, null, password); 
     //insert the registrant into the database
-    db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-      [fname, lname, email, phone, department? department.id : null, 3, password, 1], 
-      function(error, results, fields){
-      if(error){
-        error.errMsg = "There was an error inserting this record into the database. Please try again."; 
-        return res.status(403).send(error);
-      }
-      return res.send(results);
+    User.create(user).then(success => {
+      return res.send(success);
+    }, 
+    error => {
+      return res.status(403).send(error);
     });
   }, err => { // Validation failed
     return res.status(403).send({errMsg: "Invalid registrant info"}); 
-  })
+  });
 });
 
 module.exports = router;
