@@ -94,7 +94,7 @@ User.findPhonesInDepts = function(departments){
       for(r in results){
         phoneArray.push(results[r].phone);
       }
-      resolve(phoneArray); 
+      resolve(phoneArray);
     });
   });
 }

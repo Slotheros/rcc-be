@@ -20,22 +20,14 @@ router.get('/getUsers', function(req, res) {
 });
 
 
-//
-//
-// router.get('/getUserPhone', function(req, res) {
-  // Download the helper library from https://www.twilio.com/docs/node/install
-// Your Account Sid and Auth Token from twilio.com/console
-// var phone = req.body.phoneNum; 
-// var department = req.body.department; 
-
-// db.query('SELECT  FROM employee WHERE departmentID IN (?)', [department], function(error, results, fields){
-//   if(error){
-//     error.errMsg = "Can't list of users"; 
-//     return res.status(404).send(error);
-//   }
-//   return res.send(results);
-//   })
-// });
+router.post('/getPhoneNumbersByDepts', function(req, res) {
+  var depts = req.body;
+  User.findPhonesInDepts(depts).then(success => {
+    return res.send(success); 
+  }, error => {
+    return res.status(403).send(error); 
+  }); 
+})
 
 
 router.post('/getUsersByDepts', function(req, res) {
