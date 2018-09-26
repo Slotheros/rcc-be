@@ -25,13 +25,13 @@ router.post('/sms', function(req, res) {
               from: '+15853022896',
               to: number
             })
-            .then(message =>  console.log(message.status))
+            .then(message =>  console.log(message.status), error => console.log(error))
             .done();
         });
         return res.status(200).send(numbers);         
     }, function(error){
         console.log(error);
-        return res.status(400).send(); 
+        return res.status(400).send(error); 
     });  
 });
 
