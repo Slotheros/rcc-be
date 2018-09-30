@@ -8,20 +8,20 @@ var User = require('../models/user');
 //login
 router.post('/login', passport.authenticate('local-login'), function(req, res){
   //send all the user info except for the password
-  res.send(User.userWithoutPwd(req.user)); 
+  return res.send(User.userWithoutPwd(req.user)); 
 });
 
 // handle logout
 router.get("/logout", function(req, res) {
   console.log('backend logout');
   req.logOut();
-  res.send(200);
+  return res.send(200);
 })
 
 // loggedin
 router.get("/loggedin", function(req, res) {
   console.log('logged in?: ' + req.isAuthenticated());
-  res.send(req.isAuthenticated() ? User.userWithoutPwd(req.user) : '0');
+  return res.send(req.isAuthenticated() ? User.userWithoutPwd(req.user) : '0');
 });
 
 module.exports = router; 
