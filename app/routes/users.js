@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const passport = require('passport'); 
 const db = require('../utilities/db');
 const validator = require('../utilities/validator');
 var User = require('../models/user');
@@ -42,13 +41,20 @@ router.post('/getPhoneNumbersByDepts', function(req, res) {
 
 router.post('/getUsersByDepts', function(req, res) {
   var depts = req.body.departments;
-  //perform validation on the departments
-  User.findAllInDepts(depts).then(success => {
-    return res.send(success); 
-  }, error => {
-    return res.status(403).send(error); 
-  }); 
-})
+  
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(400).send({errMsg: "Unable to establish connection to the database"});
+    }
+    User.findAllInDepts(depts, conn).then(success => {
+      conn.release(); 
+      return res.send(success); 
+    }, error => {
+      conn.release(); 
+      return res.status(403).send(error); 
+    }); 
+  });
+});
 
 /**
  * Endpoint for getting a user's information
