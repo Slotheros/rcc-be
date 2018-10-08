@@ -44,7 +44,7 @@ User.create = function(user){
  * Gets a list of all users that are in the specified departments and are active employees. 
  * @param {*} departments 
  */
-User.findAllInDepts = function(departments){
+User.findAllInDepts = function(departments, conn){
   //generate array of department ids
   var params = []; 
   var where = "("; 
@@ -58,7 +58,7 @@ User.findAllInDepts = function(departments){
   params.push(1); 
 
   return new Promise((resolve, reject) => {
-    db.query("SELECT emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
+    conn.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
       "role.usertypeID, role.usertype FROM employee AS emp JOIN " + 
       "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
       "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE " + 
@@ -71,7 +71,7 @@ User.findAllInDepts = function(departments){
       var users = []; 
       for(r in results){
         var temp = results[r]; 
-        users.push({fname: temp.fname, lname: temp.lname, email: temp.email, phone: temp.phone, 
+        users.push({eId: temp.eID, fname: temp.fname, lname: temp.lname, email: temp.email, phone: temp.phone, 
           department: {id: temp.departmentID, name: temp.department}, 
           usertype: {id: temp.usertypeID, name: temp.usertype}}); 
       }
