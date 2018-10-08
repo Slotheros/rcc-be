@@ -101,7 +101,7 @@ User.findPhonesInDepts = function(departments){
   return new Promise((resolve, reject) => {
     db.query("SELECT phone FROM employee WHERE " + 
       "(departmentID IN " + where + ") " +
-      "AND (status = 1);", params, function(error, results, fields){
+      "AND (status = ?);", params, function(error, results, fields){
       if(error){
         error.errMsg = "Can't get list of users in this department"; 
         reject(error); 

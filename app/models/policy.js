@@ -1,3 +1,5 @@
+const db = require('../utilities/db');
+
 function Policy(id, title, description, url, acknowledged, date){
   this.id = id; 
   this.title = title; 
@@ -45,6 +47,27 @@ Policy.create = function(title, description, url, depts, conn){
         }
         resolve(results); 
       });
+    });
+  });
+}
+
+Policy.getPolicies = function(policyIds) {
+  var where = "("; 
+  var params = [];
+  for(i in policyIds){
+    params.push(policyIds[i]);
+    where += "?,"; 
+  }
+  where = where.slice(0, where.length-1) + ")"; 
+  
+  return new Promise((resolve, reject) => {
+    db.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0);", params, function(error, results){
+      if(error){
+        error.errMsg = "There was an error getting this information from the database. Please try again."; 
+        reject(error); 
+      } else{
+        resolve(results); 
+      }
     });
   });
 }

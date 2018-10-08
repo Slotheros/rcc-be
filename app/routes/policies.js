@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../utilities/db'); 
 var Policy = require('../models/policy');
 var User = require('../models/user'); 
-var PolicyAck = require('../models/policyAck');
+var AckPolicy = require('../models/ackPolicy');
 
 router.post('/create', function(req, res){
   var title = req.body.title; 
@@ -49,6 +49,40 @@ router.post('/create', function(req, res){
       return res.status(403).send(error); 
     });
   });
+});
+
+router.get('/getUnacknowledged/:eId', function(req, res){
+  var eId = req.params.eId; 
+
+  var promise = AckPolicy.getPolicyIds(eId, 0).then(success => {
+    // gets policies for each policyId returned
+    return Policy.getPolicies(success); 
+  }, error => {
+    return res.status(400).send(error); 
+  });
+
+  promise.then(success => {
+    return res.send(success);
+  }, error => {
+    return res.status(400).send(error); 
+  })
+});
+
+router.get('/getAcknowledged/:eId', function(req, res){
+  var eId = req.params.eId; 
+
+  var promise = AckPolicy.getPolicyIds(eId, 1).then(success => {
+    // gets policies for each policyId returned
+    return Policy.getPolicies(success); 
+  }, error => {
+    return res.status(400).send(error); 
+  });
+
+  promise.then(success => {
+    return res.send(success);
+  }, error => {
+    return res.status(400).send(error); 
+  })
 });
 
 module.exports = router; 
