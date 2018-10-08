@@ -31,7 +31,7 @@ router.post('/create', function(req, res){
     // get all employees in the given depts
     promise = promise.then(success => {
       employees = success; 
-      return PolicyAck.createPolicies(policyId, employees, conn);
+      return AckPolicy.createPolicies(policyId, employees, conn);
     }, error => {
       conn.rollback(); 
       conn.release(); 
@@ -83,6 +83,24 @@ router.get('/getAcknowledged/:eId', function(req, res){
   }, error => {
     return res.status(400).send(error); 
   })
+});
+
+router.post('/update', function(req, res) {
+  var policyId = req.body.policyId; 
+  var title = req.body.title ? req.body.title : null; 
+  var description = req.body.description ? req.body.description : null; 
+  var url = req.body.url ? req.body.url : null; 
+  var depts = req.body.depts ? req.body.depts : null; 
+
+  if(title === null && description === null && url === null && depts === null){
+    return res.send("Nothing needs to be updated"); 
+  }
+
+  Policy.update(policyId, title, description, url, depts).then(success => {
+    return res.send(success); 
+  }, error => {
+    return res.status(400).send(error); 
+  });
 });
 
 module.exports = router; 
