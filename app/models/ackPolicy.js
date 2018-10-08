@@ -1,10 +1,12 @@
-function PolicyAck(eId, acknowledged, policyId){
+const db = require('../utilities/db');
+
+function AckPolicy(eId, acknowledged, policyId){
   this.eId = eId; 
   this.acknowledged = acknowledged; 
   this.policyId = policyId; 
 }
 
-PolicyAck.createPolicies = function(policyId, employees, conn){
+AckPolicy.createPolicies = function(policyId, employees, conn){
   return new Promise((resolve, reject) => {
     var count = 0; 
     for(emp in employees) {
@@ -25,4 +27,22 @@ PolicyAck.createPolicies = function(policyId, employees, conn){
   });
 }
 
-module.exports = PolicyAck; 
+AckPolicy.getPolicyIds = function(eId, ack) {
+  return new Promise((resolve, reject) => {
+    db.query("SELECT policyID FROM ack_policy WHERE (eID = ?) AND (ack = ?) AND (deleted = 0);", 
+    [eId, ack], function(error, results){
+      if(error){
+        error.errMsg = "There was an error getting this information from the database. Please try again."; 
+        reject(error); 
+      } else{
+        var policyIds = []; 
+        for(r in results){
+          policyIds.push(results[r].policyID);
+        }
+        resolve(policyIds); 
+      }
+    })
+  }); 
+}
+
+module.exports = AckPolicy; 
