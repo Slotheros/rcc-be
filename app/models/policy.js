@@ -98,6 +98,18 @@ function addToQuery(param, strAdd, query, params){
   return query; 
 }
 
+Policy.delete = function(policyId){
+  return new Promise((resolve, reject) => {
+    db.query("UPDATE policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
+      if(error){
+        error.errMsg = "Error soft deleting this policy."; 
+        reject(error); 
+      } 
+      resolve(results); 
+    });
+  });
+}
+
 Policy.getPolicies = function(policyIds) {
   var where = "("; 
   var params = [];

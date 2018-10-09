@@ -13,7 +13,7 @@ AckPolicy.createPolicies = function(policyId, employees, conn){
       conn.query("INSERT INTO ack_policy(eID, ack, policyID, deleted) " + 
       "VALUES(?, ?, ?, ?);", [employees[emp].eId, 0, policyId, 0], function(error, results){
         count++; 
-        if(error){
+        if(error) {
           error.errMsg = "There was an error inserting this record into the database. Please try again.";
           reject(error); 
         } else{
@@ -24,6 +24,18 @@ AckPolicy.createPolicies = function(policyId, employees, conn){
         }
       });
     }
+  });
+}
+
+AckPolicy.deletePolicies = function(policyId) {
+  return new Promise((resolve, reject) => {
+    db.query("UPDATE ack_policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
+      if(error){
+        error.errMsg = "Error soft deleting policy acknowledgements."; 
+        reject(error);
+      }
+      resolve(results); 
+    })
   });
 }
 
@@ -43,6 +55,18 @@ AckPolicy.getPolicyIds = function(eId, ack) {
       }
     })
   }); 
+}
+
+AckPolicy.acknowledgePolicy = function(eId, policyId){
+  return new Promise((resolve, reject) => {
+    db.query("UPDATE ack_policy SET ack=1 WHERE (eID = ?) AND (policyID = ?);", [eId, policyId], function(error, results){
+      if(error){
+        error.errMsg = "Error acknowledging the policy in the database."; 
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  });
 }
 
 module.exports = AckPolicy; 

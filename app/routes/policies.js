@@ -103,4 +103,31 @@ router.post('/update', function(req, res) {
   });
 });
 
+router.post('/delete', function(req, res) {
+  var policyId = req.body.policyId; 
+
+  var promise = Policy.delete(policyId).then(success => {
+    return AckPolicy.deletePolicies(policyId);
+  }, error => {
+    return res.status(400).send(error); 
+  });
+
+  promise.then(success => {
+    return res.send(success); 
+  }, error => {
+    return res.status(400).send(error); 
+  });
+});
+
+router.post('/acknowledge', function(req, res) {
+  var policyId = req.body.policyId; 
+  var eId = req.body.eId; 
+
+  AckPolicy.acknowledgePolicy(eId, policyId).then(success => {
+    return res.send(success); 
+  }, error => {
+    return res.status(400).send(error); 
+  }); 
+});
+
 module.exports = router; 
