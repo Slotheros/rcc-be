@@ -106,8 +106,7 @@ router.post('/csvCompare', function(req, res){
   upload(req, res, function (err) {
     if (err) {
       // An error occurred when uploading
-      console.log(err);
-      return res.status(422).send("an Error occured")
+      return res.status(422).send("An error occured with the CSV upload.")
     }  
    // No error occured.
     var path = req.file.path;

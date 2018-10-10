@@ -27,9 +27,9 @@ AckPolicy.createPolicies = function(policyId, employees, conn){
   });
 }
 
-AckPolicy.deletePolicies = function(policyId) {
+AckPolicy.deletePolicies = function(policyId, conn) {
   return new Promise((resolve, reject) => {
-    db.query("UPDATE ack_policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
+    conn.query("UPDATE ack_policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
       if(error){
         error.errMsg = "Error soft deleting policy acknowledgements."; 
         reject(error);
@@ -39,9 +39,9 @@ AckPolicy.deletePolicies = function(policyId) {
   });
 }
 
-AckPolicy.getPolicyIds = function(eId, ack) {
+AckPolicy.getPolicyIds = function(eId, ack, conn) {
   return new Promise((resolve, reject) => {
-    db.query("SELECT policyID FROM ack_policy WHERE (eID = ?) AND (ack = ?) AND (deleted = 0);", 
+    conn.query("SELECT policyID FROM ack_policy WHERE (eID = ?) AND (ack = ?) AND (deleted = 0);", 
     [eId, ack], function(error, results){
       if(error){
         error.errMsg = "There was an error getting this information from the database. Please try again."; 

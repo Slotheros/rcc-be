@@ -12,18 +12,18 @@ router.post('/create', function(req, res){
   var depts = req.body.depts; 
 
   // validate the request params
-
   db.getConnection((err, conn) => {
     if(err){
       return res.status(400).send({errMsg: "Unable to establish connection to the database"});
     }
-
+    conn.beginTransaction(); 
     var policyId;
     var employees; 
     var promise = Policy.create(title, description, url, depts, conn).then(success => {
       policyId = success.insertId; 
       return User.findAllInDepts(depts, conn); 
     }, error => {
+      conn.rollback(); 
       conn.release(); 
       return res.status(403).send(error); 
     });
@@ -54,35 +54,61 @@ router.post('/create', function(req, res){
 router.get('/getUnacknowledged/:eId', function(req, res){
   var eId = req.params.eId; 
 
-  var promise = AckPolicy.getPolicyIds(eId, 0).then(success => {
-    // gets policies for each policyId returned
-    return Policy.getPolicies(success); 
-  }, error => {
-    return res.status(400).send(error); 
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(400).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    //get policyIds for all the unacknowledged policies
+    var promise = AckPolicy.getPolicyIds(eId, 0, conn).then(success => {
+      return Policy.getPolicies(success, conn); 
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(400).send(error); 
+    });
+    
+    //get the policies
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success);
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(400).send(error); 
+    });
   });
-
-  promise.then(success => {
-    return res.send(success);
-  }, error => {
-    return res.status(400).send(error); 
-  })
 });
 
 router.get('/getAcknowledged/:eId', function(req, res){
   var eId = req.params.eId; 
 
-  var promise = AckPolicy.getPolicyIds(eId, 1).then(success => {
-    // gets policies for each policyId returned
-    return Policy.getPolicies(success); 
-  }, error => {
-    return res.status(400).send(error); 
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(400).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    //get policyIds for all the acknowledged policies
+    var promise = AckPolicy.getPolicyIds(eId, 1, conn).then(success => {
+      return Policy.getPolicies(success, conn); 
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(400).send(error); 
+    });
+    
+    //get the policies
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success);
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(400).send(error); 
+    });
   });
-
-  promise.then(success => {
-    return res.send(success);
-  }, error => {
-    return res.status(400).send(error); 
-  })
 });
 
 router.post('/update', function(req, res) {
@@ -106,16 +132,30 @@ router.post('/update', function(req, res) {
 router.post('/delete', function(req, res) {
   var policyId = req.body.policyId; 
 
-  var promise = Policy.delete(policyId).then(success => {
-    return AckPolicy.deletePolicies(policyId);
-  }, error => {
-    return res.status(400).send(error); 
-  });
-
-  promise.then(success => {
-    return res.send(success); 
-  }, error => {
-    return res.status(400).send(error); 
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(400).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    //delete the policy
+    var promise = Policy.delete(policyId, conn).then(success => {
+      return AckPolicy.deletePolicies(policyId, conn);
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(400).send(error); 
+    });
+    
+    //delete all related entries in the ack_policy table
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(400).send(error); 
+    });
   });
 });
 

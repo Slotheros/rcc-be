@@ -15,20 +15,14 @@ Policy.create = function(title, description, url, depts, conn){
     var createDate = new Date(Date.now()); 
     createDate = createDate.toISOString().slice(0,10); 
 
-    conn.beginTransaction(function(err){
-      if(err){
-        reject(err); 
+    conn.query('INSERT INTO policy(title, description, url, date, deptSales, deptGarage, deptAdmin, deptFoodBeverage, ' + 
+    'deptProduction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', [title, description, url, createDate, deptParams[0], deptParams[1], 
+    deptParams[2], deptParams[3], deptParams[4]], function(error, results){
+      if (error) {
+        error.errMsg = "There was an error inserting this record into the database. Please try again."; 
+        reject(error);
       }
-      conn.query('INSERT INTO policy(title, description, url, date, deptSales, deptGarage, deptAdmin, deptFoodBeverage, ' + 
-      'deptProduction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', [title, description, url, createDate, deptParams[0], deptParams[1], 
-      deptParams[2], deptParams[3], deptParams[4]], function(error, results){
-        if (error) {
-          conn.rollback();
-          error.errMsg = "There was an error inserting this record into the database. Please try again."; 
-          reject(error);
-        }
-        resolve(results); 
-      });
+      resolve(results); 
     });
   });
 }
@@ -98,9 +92,9 @@ function addToQuery(param, strAdd, query, params){
   return query; 
 }
 
-Policy.delete = function(policyId){
+Policy.delete = function(policyId, conn){
   return new Promise((resolve, reject) => {
-    db.query("UPDATE policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
+    conn.query("UPDATE policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
       if(error){
         error.errMsg = "Error soft deleting this policy."; 
         reject(error); 
@@ -110,7 +104,7 @@ Policy.delete = function(policyId){
   });
 }
 
-Policy.getPolicies = function(policyIds) {
+Policy.getPolicies = function(policyIds, conn) {
   var where = "("; 
   var params = [];
   for(i in policyIds){
@@ -120,7 +114,7 @@ Policy.getPolicies = function(policyIds) {
   where = where.slice(0, where.length-1) + ")"; 
   
   return new Promise((resolve, reject) => {
-    db.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0);", params, function(error, results){
+    conn.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0);", params, function(error, results){
       if(error){
         error.errMsg = "There was an error getting this information from the database. Please try again."; 
         reject(error); 
