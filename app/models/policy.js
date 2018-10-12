@@ -110,15 +110,20 @@ Policy.delete = function(policyId, conn){
 }
 
 Policy.getPolicies = function(policyIds, conn) {
-  var where = "("; 
-  var params = [];
-  for(i in policyIds){
-    params.push(policyIds[i]);
-    where += "?,"; 
-  }
-  where = where.slice(0, where.length-1) + ")"; 
-  
   return new Promise((resolve, reject) => {
+    //if there are no policyIds return an empty array
+    if(policyIds.length == 0){
+      resolve([]); 
+    }
+
+    var where = "("; 
+    var params = [];
+    for(i in policyIds){
+      params.push(policyIds[i]);
+      where += "?,"; 
+    }
+    where = where.slice(0, where.length-1) + ")"; 
+
     conn.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0);", params, function(error, results){
       if(error){
         error.errMsg = "There was an error getting this information from the database. Please try again."; 
