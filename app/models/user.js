@@ -1,7 +1,8 @@
 const db = require('../utilities/db');
 const bcrypt = require('bcrypt-nodejs'); 
 
-function User(fname, lname, email, phone, department, usertype, password){
+function User(eId, fname, lname, email, phone, department, usertype, password){
+  this.eId = eId; 
   this.fname = fname; 
   this.lname = lname; 
   this.email = email; 
@@ -123,7 +124,7 @@ User.findPhonesInDepts = function(departments){
 User.findOne = function(user, callback){
   var userData; 
   new Promise((resolve, reject) => {
-    db.query(`SELECT emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
+    db.query(`SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
       role.usertypeID, role.usertype, emp.password FROM employee AS emp JOIN 
       department AS dept ON (emp.departmentID = dept.departmentID) JOIN 
       usertype AS role ON (emp.usertypeID = role.usertypeID)
@@ -139,7 +140,7 @@ User.findOne = function(user, callback){
       }
     })
   }).then(success => 
-    callback(null, new User(userData.fname, userData.lname, userData.email, userData.phone,
+    callback(null, new User(userData.eID, userData.fname, userData.lname, userData.email, userData.phone,
       {id: userData.departmentID, name: userData.department}, 
       {id: userData.usertypeID, name: userData.usertype}, userData.password)), 
     err => callback(err, null)
@@ -152,6 +153,7 @@ User.findOne = function(user, callback){
  */
 User.userWithoutPwd = function(user){
   return {
+    eId: user.eId, 
     fname: user.fname, 
     lname: user.lname, 
     email: user.email, 

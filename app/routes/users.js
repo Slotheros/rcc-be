@@ -89,7 +89,7 @@ router.post('/register', function(req, res){
   valid.then(success => {
     //validation passed
     //create User
-    var user = new User(fname, lname, email, phone, department, null, password); 
+    var user = new User(null, fname, lname, email, phone, department, null, password); 
     //insert the registrant into the database
     User.create(user).then(success => {
       return res.send(success);

@@ -27,7 +27,11 @@ Policy.create = function(title, description, url, depts, conn){
   });
 }
 
-// generate array of 0/1 that states whether this policy is relevant to the corresponding dept
+/**
+ * Modifies the depts param so that the 'deleted' field is added to the Department objects. 
+ * 'deleted' will also be assigned a 0/1 value. 
+ * @param {[Department]} depts 
+ */
 function getDeptParams(depts){
   var deptParams = [0, 0, 0, 0, 0];
   for(dept in depts) {
@@ -61,8 +65,9 @@ Policy.update = function(policyId, title, description, url, depts) {
     query = addToQuery(title, "title", query, params); 
     query = addToQuery(description, "description", query, params); 
     query = addToQuery(url, "url", query, params); 
+    var deptParams = [];
     if(depts !== null) {
-      var deptParams = getDeptParams(depts); 
+      deptParams = getDeptParams(depts); 
       query = addToQuery(deptParams[0], "deptSales", query, params); 
       query = addToQuery(deptParams[1], "deptGarage", query, params); 
       query = addToQuery(deptParams[2], "deptAdmin", query, params); 
@@ -79,7 +84,7 @@ Policy.update = function(policyId, title, description, url, depts) {
         error.errMsg = "Error updating the policy in the database."; 
         reject(error); 
       } 
-      resolve(results); 
+      resolve(deptParams); 
     });
   }); 
 }

@@ -20,7 +20,6 @@ router.get("/logout", function(req, res) {
 
 // loggedin
 router.get("/loggedin", function(req, res) {
-  console.log('logged in?: ' + req.isAuthenticated());
   return res.send(req.isAuthenticated() ? User.userWithoutPwd(req.user) : '0');
 });
 
