@@ -59,9 +59,7 @@ AckPolicy.getPolicyIds = function(eId, ack, conn) {
 
 AckPolicy.acknowledgePolicy = function(eId, policyId){
   return new Promise((resolve, reject) => {
-    var ackDate = new Date(Date.now()); 
-    ackDate = ackDate.toISOString().slice(0,10); 
-    db.query("UPDATE ack_policy SET ack=1, date=? WHERE (eID = ?) AND (policyID = ?);", [ackDate, eId, policyId], function(error, results){
+    db.query("UPDATE ack_policy SET ack=1 WHERE (eID = ?) AND (policyID = ?);", [eId, policyId], function(error, results){
       if(error){
         error.errMsg = "Error acknowledging the policy in the database."; 
         reject(error); 
