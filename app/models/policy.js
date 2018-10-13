@@ -16,8 +16,9 @@ Policy.create = function(title, description, url, depts, conn){
     createDate = createDate.toISOString().slice(0,10); 
 
     conn.query('INSERT INTO policy(title, description, url, date, deptSales, deptGarage, deptAdmin, deptFoodBeverage, ' + 
-    'deptProduction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', [title, description, url, createDate, deptParams[0], deptParams[1], 
-    deptParams[2], deptParams[3], deptParams[4]], function(error, results){
+    'deptProduction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', [title, description, url, createDate, deptParams[0].relevant, 
+    deptParams[1].relevant, deptParams[2].relevant, deptParams[3].relevant, deptParams[4].relevant], 
+    function(error, results){
       if (error) {
         error.errMsg = "There was an error inserting this record into the database. Please try again."; 
         reject(error);
@@ -28,28 +29,35 @@ Policy.create = function(title, description, url, depts, conn){
 }
 
 /**
- * Modifies the depts param so that the 'deleted' field is added to the Department objects. 
- * 'deleted' will also be assigned a 0/1 value. 
+ * Generates an array of departments with the 'id' and 'relevant' field.
+ * The 'relevant' field will be assigned a 0/1 value depending on if the dept
+ * is a part of the depts parameter. 
+ * dept parameter. 
  * @param {[Department]} depts 
  */
 function getDeptParams(depts){
-  var deptParams = [0, 0, 0, 0, 0];
+  var deptParams = [];
+  for(var i = 1; i < 6; i++){
+    deptParams.push({id: i, relevant: 0});
+  }
+  
   for(dept in depts) {
-    switch(depts[dept].id) {
+    var id = depts[dept].id; 
+    switch(id) {
       case 1: 
-        deptParams[0] = 1; 
+        deptParams[0].relevant = 1; 
         break; 
       case 2: 
-        deptParams[1] = 1; 
+        deptParams[1].relevant = 1; 
         break; 
       case 3: 
-        deptParams[2] = 1; 
+        deptParams[2].relevant = 1; 
         break; 
       case 4: 
-        deptParams[3] = 1; 
+        deptParams[3].relevant = 1; 
         break; 
       case 5: 
-        deptParams[4] = 1; 
+        deptParams[4].relevant = 1; 
         break; 
     }
   }
@@ -57,7 +65,7 @@ function getDeptParams(depts){
   return deptParams; 
 }
 
-Policy.update = function(policyId, title, description, url, depts) {
+Policy.update = function(policyId, title, description, url, depts, conn) {
   return new Promise((resolve, reject) => {
     //generate the query based on which values are not null
     var query = "UPDATE policy SET ";
@@ -68,18 +76,18 @@ Policy.update = function(policyId, title, description, url, depts) {
     var deptParams = [];
     if(depts !== null) {
       deptParams = getDeptParams(depts); 
-      query = addToQuery(deptParams[0], "deptSales", query, params); 
-      query = addToQuery(deptParams[1], "deptGarage", query, params); 
-      query = addToQuery(deptParams[2], "deptAdmin", query, params); 
-      query = addToQuery(deptParams[3], "deptFoodBeverage", query, params); 
-      query = addToQuery(deptParams[4], "deptProduction", query, params); 
+      query = addToQuery(deptParams[0].relevant, "deptSales", query, params); 
+      query = addToQuery(deptParams[1].relevant, "deptGarage", query, params); 
+      query = addToQuery(deptParams[2].relevant, "deptAdmin", query, params); 
+      query = addToQuery(deptParams[3].relevant, "deptFoodBeverage", query, params); 
+      query = addToQuery(deptParams[4].relevant, "deptProduction", query, params); 
     }
     query = query.slice(0, query.length-1); 
     query += " WHERE (policyId = ?);";
     params.push(policyId); 
 
     //query the database
-    db.query(query, params, function(error, results){
+    conn.query(query, params, function(error, results){
       if(error){
         error.errMsg = "Error updating the policy in the database."; 
         reject(error); 
@@ -124,7 +132,7 @@ Policy.getPolicies = function(policyIds, conn) {
     }
     where = where.slice(0, where.length-1) + ")"; 
 
-    conn.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0);", params, function(error, results){
+    conn.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0) ORDER BY date;", params, function(error, results){
       if(error){
         error.errMsg = "There was an error getting this information from the database. Please try again."; 
         reject(error); 

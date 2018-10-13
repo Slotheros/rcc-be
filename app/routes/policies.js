@@ -122,11 +122,46 @@ router.post('/update', function(req, res) {
     return res.send("Nothing needs to be updated"); 
   }
 
-  Policy.update(policyId, title, description, url, depts).then(success => {
-    return res.send(success); 
-  }, error => {
-    return res.status(400).send(error); 
-  });
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(400).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+
+    var relevantDepts = []; 
+    var irrelevantDepts = []; 
+
+    var promise = Policy.update(policyId, title, description, url, depts, conn).then(success => {
+      //if there are no dept changes
+      if(depts === null){
+        return Promise.resolve(success); 
+      } 
+
+      //otherwise perform the process to insert/update ack_policy entries based on dept changes
+      for(i in success){
+        if(success[i].relevant == 1){
+          relevantDepts.push(success[i]); 
+        } else{
+          irrelevantDepts.push(success[i]); 
+        }
+      }
+      
+      return Promise.all([AckPolicy.makeDeptsRelevant(relevantDepts, policyId, conn), 
+        AckPolicy.makeDeptsIrrelevant(irrelevantDepts, policyId, conn)]); 
+    });
+
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(400).send(error); 
+    });
+  }); 
 });
 
 router.post('/delete', function(req, res) {
