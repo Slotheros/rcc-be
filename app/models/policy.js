@@ -9,6 +9,9 @@ function Policy(id, title, description, url, acknowledged, date){
   this.date = date; 
 }
 
+/**
+ * Creates a new entry in the 'policy' table. 
+ */
 Policy.create = function(title, description, url, depts, conn){
   return new Promise((resolve, reject) => {
     var deptParams = getDeptParams(depts); 
@@ -65,6 +68,9 @@ function getDeptParams(depts){
   return deptParams; 
 }
 
+/**
+ * Updates an existing policy entry. 
+ */
 Policy.update = function(policyId, title, description, url, depts, conn) {
   return new Promise((resolve, reject) => {
     //generate the query based on which values are not null
@@ -97,6 +103,13 @@ Policy.update = function(policyId, title, description, url, depts, conn) {
   }); 
 }
 
+/**
+ * Helper function that adds to a query.
+ * @param {*} param - param that is being added to the query
+ * @param {*} strAdd - the string representation of the param
+ * @param {*} query - existing query
+ * @param {*} params - List of params that will be inserting into the query at runtime
+ */
 function addToQuery(param, strAdd, query, params){
   if(param !== null){
     query += strAdd + " = ?,"; 
@@ -117,6 +130,9 @@ Policy.delete = function(policyId, conn){
   });
 }
 
+/**
+ * Gets a list of policies based on the policyIds provided. 
+ */
 Policy.getPolicies = function(policyIds, conn) {
   return new Promise((resolve, reject) => {
     //if there are no policyIds return an empty array

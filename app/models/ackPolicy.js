@@ -1,12 +1,17 @@
 const db = require('../utilities/db');
 const User = require('./user'); 
 
-function AckPolicy(eId, acknowledged, policyId){
+function AckPolicy(eId, acknowledged, policyId, deleted){
   this.eId = eId; 
   this.acknowledged = acknowledged; 
   this.policyId = policyId; 
+  this.deleted = deleted;
 }
 
+/**
+ * Creates 'ack_policy' entries for the employees that need 
+ * to acknowledge a policy. 
+ */
 AckPolicy.createPolicies = function(policyId, employees, conn){
   return new Promise((resolve, reject) => {
     var count = 0; 
@@ -28,6 +33,9 @@ AckPolicy.createPolicies = function(policyId, employees, conn){
   });
 }
 
+/**
+ * Soft-deletes 'ack_policy' entries when it's corresponding policy has been deleted. 
+ */
 AckPolicy.deletePolicies = function(policyId, conn) {
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
@@ -40,6 +48,9 @@ AckPolicy.deletePolicies = function(policyId, conn) {
   });
 }
 
+/**
+ * Returns a list of policyIds for policies that a employee needs to acknowledge/has acknowledged. 
+ */
 AckPolicy.getPolicyIds = function(eId, ack, conn) {
   return new Promise((resolve, reject) => {
     conn.query("SELECT policyID FROM ack_policy WHERE (eID = ?) AND (ack = ?) AND (deleted = 0);", 
@@ -58,6 +69,9 @@ AckPolicy.getPolicyIds = function(eId, ack, conn) {
   }); 
 }
 
+/**
+ * Sets the 'ack' field to 1, denoting that the user has acknowledged a policy.
+ */
 AckPolicy.acknowledgePolicy = function(eId, policyId){
   return new Promise((resolve, reject) => {
     db.query("UPDATE ack_policy SET ack=1 WHERE (eID = ?) AND (policyID = ?);", [eId, policyId], function(error, results){
@@ -70,6 +84,11 @@ AckPolicy.acknowledgePolicy = function(eId, policyId){
   });
 }
 
+/**
+ * Given a list of departments that are relevant to a policy, and the policyId, this 
+ * function generates/updates entries in the ack_policy table for every employee in 
+ * the departments. 
+ */
 AckPolicy.makeDeptsRelevant = function(relevantDepts, policyId, conn) {
   return new Promise((resolve, reject) => {
     //get list of users from these depts
@@ -98,6 +117,11 @@ AckPolicy.makeDeptsRelevant = function(relevantDepts, policyId, conn) {
   });
 }
 
+/**
+ * Given a list of departments that are no longer relevant to a policy, and the policyID, 
+ * this function updates existing 'ack_policy' entries for employees in the departments to 
+ * be soft-deleted. 
+ */
 AckPolicy.makeDeptsIrrelevant = function(irrelevantDepts, policyId, conn) {
   return new Promise((resolve, reject) => {
     //get list of users from these depts
