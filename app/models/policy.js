@@ -132,7 +132,7 @@ Policy.getPolicies = function(policyIds, conn) {
     }
     where = where.slice(0, where.length-1) + ")"; 
 
-    conn.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0) ORDER BY date;", params, function(error, results){
+    conn.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0) ORDER BY date, title;", params, function(error, results){
       if(error){
         error.errMsg = "There was an error getting this information from the database. Please try again."; 
         reject(error); 
