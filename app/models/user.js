@@ -46,25 +46,29 @@ User.create = function(user){
  * @param {*} departments 
  */
 User.findAllInDepts = function(departments, conn){
-  //generate array of department ids
-  var params = []; 
-  var where = "("; 
-  for(dept in departments){
-    where += "?,"; 
-    params.push(departments[dept].id); 
-  }
-  where = where.slice(0, where.length-1) + ")"; 
-  
-  //status value
-  params.push(1); 
-
   return new Promise((resolve, reject) => {
+    //if the depts is an empty array
+    if(departments.length == 0){
+      resolve([]); 
+    }
+
+    //generate array of department ids
+    var params = []; 
+    var where = "("; 
+    for(dept in departments){
+      where += "?,"; 
+      params.push(departments[dept].id); 
+    }
+    where = where.slice(0, where.length-1) + ")"; 
+
+    //status value
+    params.push(1); 
     conn.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
       "role.usertypeID, role.usertype FROM employee AS emp JOIN " + 
       "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
       "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE " + 
       "(dept.departmentID IN " + where + ") " +
-      "AND (emp.status = 1);", params, function(error, results, fields){
+      "AND (emp.status = ?);", params, function(error, results, fields){
       if(error){
         error.errMsg = "Can't get list of users in this department"; 
         reject(error); 

@@ -128,6 +128,9 @@ AckPolicy.makeDeptsIrrelevant = function(irrelevantDepts, policyId, conn) {
     var employees = []; 
     User.findAllInDepts(irrelevantDepts, conn).then(success => {
       employees = success; 
+      if(employees.length == 0){
+        resolve("Successfully updated ack_policy entries to make depts irrelevant.");
+      }
       var count = 0; 
       //perform an update for each employee that sets 'deleted' to 1
       for(e in employees){
