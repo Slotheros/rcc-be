@@ -130,6 +130,9 @@ router.post('/update', function(req, res) {
   var description = req.body.description ? req.body.description : null; 
   var url = req.body.url ? req.body.url : null; 
   var depts = req.body.depts ? req.body.depts : null; 
+  if(depts.length == 0){
+    depts = null; 
+  }
 
   if(title === null && description === null && url === null && depts === null){
     return res.send("Nothing needs to be updated"); 
