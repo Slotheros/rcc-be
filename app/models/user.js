@@ -22,12 +22,12 @@ function User(eId, fname, lname, email, phone, department, usertype, password){
  * Creates a new user entry in the database.
  * @param {User} user 
  */
-User.create = function(user){
+User.create = function(user, conn){
   return new Promise((resolve, reject) => {
     //encrypts the password
     user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(8));
 
-    db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
+    conn.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
       [user.fname, user.lname, user.email, user.phone, user.department? user.department.id : null, 3, user.password, 1], 
       function(error, results, fields){

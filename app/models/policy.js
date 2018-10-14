@@ -133,7 +133,7 @@ Policy.delete = function(policyId, conn){
 /**
  * Gets a list of policies based on the policyIds provided. 
  */
-Policy.getPolicies = function(policyIds, conn) {
+Policy.getPoliciesByIds = function(policyIds, conn) {
   return new Promise((resolve, reject) => {
     //if there are no policyIds return an empty array
     if(policyIds.length == 0){
@@ -155,6 +155,41 @@ Policy.getPolicies = function(policyIds, conn) {
       } 
       resolve(results); 
     });
+  });
+}
+
+/**
+ * Get a list of policy ids based on the department id provided
+ */
+Policy.getPolicyIdsByDept = function(deptId, conn){
+  return new Promise((resolve, reject) => {
+    //generate query condition
+    var condition = ""; 
+    switch(deptId){
+      case 1: 
+        condition = "(deptSales = 1);"
+        break; 
+      case 2: 
+        condition = "(deptGarage = 1);"
+        break; 
+      case 3: 
+        condition = "(deptAdmin = 1);"
+        break; 
+      case 4: 
+        condition = "(deptFoodBeverage = 1);"
+        break; 
+      case 5: 
+        condition = "(deptProduction = 1);"
+        break; 
+    }
+
+    conn.query("SELECT policyID FROM policy WHERE (deleted=0) AND " + condition, [], function(error, results){
+      if(error){
+        error.errMsg = "There was an error getting policies based on deptId from the database. Please try again."; 
+        reject(error); 
+      } 
+      resolve(results); 
+    })
   });
 }
 

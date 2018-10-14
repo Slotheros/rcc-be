@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../utilities/db');
 const validator = require('../utilities/validator');
 var User = require('../models/user');
+var Policy = require('../models/policy');
+var AckPolicy = require('../models/ackPolicy');
 var multer = require('multer');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -84,21 +86,52 @@ router.post('/register', function(req, res){
 
   
   //validate the request data
-  var valid = validator.validateRegistrant(fname, lname, email, phone, department, password); 
+  var promise = validator.validateRegistrant(fname, lname, email, phone, department, password); 
 
-  valid.then(success => {
-    //validation passed
-    //create User
-    var user = new User(null, fname, lname, email, phone, department, null, password); 
-    //insert the registrant into the database
-    User.create(user).then(success => {
-      return res.send(success);
-    }, 
-    error => {
-      return res.status(403).send(error);
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+
+    conn.beginTransaction(); 
+    var user; 
+
+    //validation
+    promise = promise.then(success => {
+      //create User
+      user = new User(null, fname, lname, email, phone, department, null, password); 
+      //insert the registrant into the database
+      return User.create(user, conn);
+    }, err => { 
+      // Validation failed
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(403).send({errMsg: "Invalid registrant info"}); 
+    }); 
+
+    promise = promise.then(success => {
+      //save the user info
+      user = success; 
+      //get policies relevant to this employee
+      return Policy.getPolicyIdsByDept(department.id, conn); 
+    });  
+
+    promise = promise.then(success => {
+      //create ack_policy entries for new employee
+      return AckPolicy.newEmployee(success, user, conn);
     });
-  }, err => { // Validation failed
-    return res.status(403).send({errMsg: "Invalid registrant info"}); 
+
+    promise = promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send("Successfully registered employee."); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    }); 
   });
 });
 

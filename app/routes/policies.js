@@ -34,7 +34,7 @@ router.post('/create', function(req, res){
     // get all employees in the given depts
     promise = promise.then(success => {
       employees = success; 
-      return AckPolicy.createPolicies(policyId, employees, conn);
+      return AckPolicy.newPolicy(policyId, employees, conn);
     });
 
     // create a policy acknowledgement for each employee
@@ -66,7 +66,7 @@ router.get('/getUnacknowledged/:eId', function(req, res){
     conn.beginTransaction(); 
     //get policyIds for all the unacknowledged policies
     var promise = AckPolicy.getPolicyIds(eId, 0, conn).then(success => {
-      return Policy.getPolicies(success, conn); 
+      return Policy.getPoliciesByIds(success, conn); 
     });
     
     //get the policies
@@ -98,7 +98,7 @@ router.get('/getAcknowledged/:eId', function(req, res){
     conn.beginTransaction(); 
     //get policyIds for all the acknowledged policies
     var promise = AckPolicy.getPolicyIds(eId, 1, conn).then(success => {
-      return Policy.getPolicies(success, conn); 
+      return Policy.getPoliciesByIds(success, conn); 
     });
     
     //get the policies

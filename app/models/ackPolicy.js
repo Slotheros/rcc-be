@@ -12,8 +12,12 @@ function AckPolicy(eId, acknowledged, policyId, deleted){
  * Creates 'ack_policy' entries for the employees that need 
  * to acknowledge a policy. 
  */
-AckPolicy.createPolicies = function(policyId, employees, conn){
+AckPolicy.newPolicy = function(policyId, employees, conn){
   return new Promise((resolve, reject) => {
+    //if there are no employees
+    if(employees.length == 0){
+      resolve({success: "Successfully created acknowledgements for policy for all relevant users."}); 
+    }
     var count = 0; 
     for(emp in employees) {
       conn.query("INSERT INTO ack_policy(eID, ack, policyID, deleted) " + 
@@ -31,6 +35,31 @@ AckPolicy.createPolicies = function(policyId, employees, conn){
       });
     }
   });
+}
+
+AckPolicy.newEmployee = function(policyIds, employee, conn){
+  return new Promise((resolve, reject) => {
+    //if there are no policies
+    if(policyIds.length == 0){
+      resolve({success: "Successfully created acknowledgements for employee for all relevant policies."}); 
+    }
+    var count = 0; 
+    for(i in policyIds) {
+      conn.query("INSERT INTO ack_policy(eID, ack, policyID, deleted) " + 
+      "VALUES(?, ?, ?, ?);", [employee.insertId, 0, policyIds[i].policyID, 0], function(error, results){
+        count++; 
+        if(error) {
+          error.errMsg = "There was an error inserting this record into the database. Please try again.";
+          reject(error); 
+        } else{
+          //reaches end of list so it resolved successfully
+          if(count == policyIds.length-1){
+            resolve({success: "Successfully created acknowledgements for employee for all relevant policies."}); 
+          }
+        }
+      });
+    }
+  })
 }
 
 /**
