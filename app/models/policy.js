@@ -152,11 +152,25 @@ Policy.getPolicies = function(policyIds, conn) {
       if(error){
         error.errMsg = "There was an error getting this information from the database. Please try again."; 
         reject(error); 
-      } else{
-        resolve(results); 
-      }
+      } 
+      resolve(results); 
     });
   });
+}
+
+/**
+ * Gets all policies from the 'policy' table that haven't been deleted. 
+ */
+Policy.getAllPolicies = function(){
+  return new Promise((resolve, reject) => {
+    db.query("SELECT * FROM policy WHERE (deleted = 0);", [], function(error, results){
+      if(error){
+        error.errMsg = "There was an error getting all policies from the database. Please try again."; 
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  })
 }
 
 module.exports = Policy; 

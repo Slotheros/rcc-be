@@ -232,4 +232,15 @@ router.post('/acknowledge', function(req, res) {
   }); 
 });
 
+/**
+ * Allows admin to get all policies for all departments. 
+ */
+router.get('/getAll', function(req, res) {
+  Policy.getAllPolicies().then(success => {
+    return res.send(success); 
+  }, error => {
+    return res.status(500).send(error); 
+  });
+});
+
 module.exports = router; 
