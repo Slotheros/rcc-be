@@ -13,7 +13,6 @@ router.post('/login', passport.authenticate('local-login'), function(req, res){
 
 // handle logout
 router.get("/logout", function(req, res) {
-  console.log('backend logout');
   req.logOut();
   return res.send(200);
 })

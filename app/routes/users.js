@@ -124,7 +124,7 @@ router.post('/register', function(req, res){
     promise = promise.then(success => {
       conn.commit(); 
       conn.release(); 
-      return res.send("Successfully registered employee."); 
+      return res.send({msg: "Successfully registered employee."}); 
     });
 
     promise.catch(error => {
@@ -139,11 +139,11 @@ router.post('/csvCompare', function(req, res){
   upload(req, res, function (err) {
     if (err) {
       // An error occurred when uploading
-      return res.status(422).send("An error occured with the CSV upload.")
+      return res.status(422).send({msg: "An error occured with the CSV upload."})
     }  
    // No error occured.
     var path = req.file.path;
-    return res.send("Upload Completed for " + path); 
+    return res.send({msg: "Upload Completed for " + path}); 
   }); 
 }); 
 

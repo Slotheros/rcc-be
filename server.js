@@ -39,7 +39,7 @@ app.use(cors({
 //Check that the user is authenticated
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) { return next(); }
-  res.status(401).send("Please login first")
+  res.status(401).send({errMsg: "Please login first"});
 }
 app.all('*', function(req,res,next){
   if (req.path === '/users/register' || req.path === '/auth/login')

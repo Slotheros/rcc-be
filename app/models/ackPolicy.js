@@ -62,6 +62,18 @@ AckPolicy.newEmployee = function(policyIds, employee, conn){
   })
 }
 
+AckPolicy.unackPolicy = function(policyId, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE ack_policy SET ack=0 WHERE (policyID = ?);", [policyId], function(error, results) {
+      if(error) {
+        error.errMsg = "There was an error unacknowledging policies. Please try again.";
+        reject(error);
+      }
+      resolve(results);
+    });
+  });
+}
+
 /**
  * Soft-deletes 'ack_policy' entries when it's corresponding policy has been deleted. 
  */

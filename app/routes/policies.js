@@ -137,7 +137,7 @@ router.post('/update', function(req, res) {
   }
 
   if(title === null && description === null && url === null && depts === null){
-    return res.send("Nothing needs to be updated"); 
+    return res.send({msg: "Nothing needs to be updated"}); 
   }
 
   db.getConnection((err, conn) => {
@@ -150,11 +150,6 @@ router.post('/update', function(req, res) {
     var irrelevantDepts = []; 
 
     var promise = Policy.update(policyId, title, description, url, depts, conn).then(success => {
-      //if there are no dept changes
-      if(depts === null){
-        return Promise.resolve(success); 
-      } 
-
       //otherwise perform the process to insert/update ack_policy entries based on dept changes
       for(i in success){
         if(success[i].relevant == 1){
@@ -164,18 +159,28 @@ router.post('/update', function(req, res) {
         }
       }
       
-      return Promise.all([AckPolicy.makeDeptsRelevant(relevantDepts, policyId, conn), 
-        AckPolicy.makeDeptsIrrelevant(irrelevantDepts, policyId, conn)]); 
+      //unack all entries that are related to this policy so users have to ack it again
+      return AckPolicy.unackPolicy(policyId, conn);
     });
 
-    // makes changes to the ack_policy table
+    promise = promise.then(success => {
+      //if there are no dept changes
+      if(depts === null){
+        return Promise.resolve(success); 
+      } 
+      
+      // makes changes to the ack_policy table based on which depts are still relevant
+      return Promise.all([AckPolicy.makeDeptsRelevant(relevantDepts, policyId, conn), 
+        AckPolicy.makeDeptsIrrelevant(irrelevantDepts, policyId, conn)]);
+    });
+    
     promise.then(success => {
       conn.commit(); 
       conn.release(); 
       return res.send(success); 
     });
 
-    // error hanlding
+    // error handling
     promise.catch(error => {
       conn.rollback(); 
       conn.release(); 
