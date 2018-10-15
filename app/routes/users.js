@@ -5,6 +5,8 @@ const validator = require('../utilities/validator');
 var User = require('../models/user');
 var Policy = require('../models/policy');
 var AckPolicy = require('../models/ackPolicy');
+var Survey = require('../models/survey'); 
+var AckSurvey = require('../models/ackSurvey'); 
 var multer = require('multer');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -95,6 +97,7 @@ router.post('/register', function(req, res){
 
     conn.beginTransaction(); 
     var user; 
+    var policyIds; 
 
     //validation
     promise = promise.then(success => {
@@ -117,8 +120,15 @@ router.post('/register', function(req, res){
     });  
 
     promise = promise.then(success => {
+      //save the policyids 
+      policyIds = success; 
+      //get surveys relevant to this employee
+      return Survey.getSurveyIdsByDept(department.id, conn); 
+    })
+
+    promise = promise.then(success => {
       //create ack_policy entries for new employee
-      return AckPolicy.newEmployee(success, user, conn);
+      return Promise.all([AckPolicy.newEmployee(policyIds, user, conn), AckSurvey.newEmployee(success, user, conn)]);
     });
 
     promise = promise.then(success => {
