@@ -13,14 +13,12 @@ router.post('/login', passport.authenticate('local-login'), function(req, res){
 
 // handle logout
 router.get("/logout", function(req, res) {
-  console.log('backend logout');
   req.logOut();
   return res.send(200);
 })
 
 // loggedin
 router.get("/loggedin", function(req, res) {
-  console.log('logged in?: ' + req.isAuthenticated());
   return res.send(req.isAuthenticated() ? User.userWithoutPwd(req.user) : '0');
 });
 

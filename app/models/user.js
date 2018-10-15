@@ -1,7 +1,8 @@
 const db = require('../utilities/db');
 const bcrypt = require('bcrypt-nodejs'); 
 
-function User(fname, lname, email, phone, department, usertype, password){
+function User(eId, fname, lname, email, phone, department, usertype, password){
+  this.eId = eId; 
   this.fname = fname; 
   this.lname = lname; 
   this.email = email; 
@@ -21,12 +22,12 @@ function User(fname, lname, email, phone, department, usertype, password){
  * Creates a new user entry in the database.
  * @param {User} user 
  */
-User.create = function(user){
+User.create = function(user, conn){
   return new Promise((resolve, reject) => {
     //encrypts the password
     user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(8));
 
-    db.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
+    conn.query('INSERT INTO employee(fname, lname, email, phone, departmentID, usertypeID, password, status) ' + 
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
       [user.fname, user.lname, user.email, user.phone, user.department? user.department.id : null, 3, user.password, 1], 
       function(error, results, fields){
@@ -45,25 +46,29 @@ User.create = function(user){
  * @param {*} departments 
  */
 User.findAllInDepts = function(departments, conn){
-  //generate array of department ids
-  var params = []; 
-  var where = "("; 
-  for(dept in departments){
-    where += "?,"; 
-    params.push(departments[dept].id); 
-  }
-  where = where.slice(0, where.length-1) + ")"; 
-  
-  //status value
-  params.push(1); 
-
   return new Promise((resolve, reject) => {
+    //if the depts is an empty array
+    if(departments.length == 0){
+      resolve([]); 
+    }
+
+    //generate array of department ids
+    var params = []; 
+    var where = "("; 
+    for(dept in departments){
+      where += "?,"; 
+      params.push(departments[dept].id); 
+    }
+    where = where.slice(0, where.length-1) + ")"; 
+
+    //status value
+    params.push(1); 
     conn.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
       "role.usertypeID, role.usertype FROM employee AS emp JOIN " + 
       "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
       "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE " + 
       "(dept.departmentID IN " + where + ") " +
-      "AND (emp.status = 1);", params, function(error, results, fields){
+      "AND (emp.status = ?);", params, function(error, results, fields){
       if(error){
         error.errMsg = "Can't get list of users in this department"; 
         reject(error); 
@@ -123,7 +128,7 @@ User.findPhonesInDepts = function(departments){
 User.findOne = function(user, callback){
   var userData; 
   new Promise((resolve, reject) => {
-    db.query(`SELECT emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
+    db.query(`SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
       role.usertypeID, role.usertype, emp.password FROM employee AS emp JOIN 
       department AS dept ON (emp.departmentID = dept.departmentID) JOIN 
       usertype AS role ON (emp.usertypeID = role.usertypeID)
@@ -139,7 +144,7 @@ User.findOne = function(user, callback){
       }
     })
   }).then(success => 
-    callback(null, new User(userData.fname, userData.lname, userData.email, userData.phone,
+    callback(null, new User(userData.eID, userData.fname, userData.lname, userData.email, userData.phone,
       {id: userData.departmentID, name: userData.department}, 
       {id: userData.usertypeID, name: userData.usertype}, userData.password)), 
     err => callback(err, null)
@@ -152,6 +157,7 @@ User.findOne = function(user, callback){
  */
 User.userWithoutPwd = function(user){
   return {
+    eId: user.eId, 
     fname: user.fname, 
     lname: user.lname, 
     email: user.email, 

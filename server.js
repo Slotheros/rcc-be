@@ -10,6 +10,7 @@ const usersRoute = require('./app/routes/users');
 const authRoute = require('./app/routes/auth');
 const alertsRoute = require('./app/routes/alerts');
 const policiesRoute = require('./app/routes/policies'); 
+const surveysRoute = require('./app/routes/surveys'); 
 
 const app = express();
 
@@ -39,7 +40,7 @@ app.use(cors({
 //Check that the user is authenticated
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) { return next(); }
-  res.status(401).send("Please login first")
+  res.status(401).send({errMsg: "Please login first"});
 }
 app.all('*', function(req,res,next){
   if (req.path === '/users/register' || req.path === '/auth/login')
@@ -53,5 +54,6 @@ app.use('/users', usersRoute);
 app.use('/auth', authRoute); 
 app.use('/alerts', alertsRoute); 
 app.use('/policies', policiesRoute); 
+app.use('/surveys', surveysRoute); 
 
 app.listen(3000, () => console.log('Running on port 3000'));

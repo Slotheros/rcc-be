@@ -3,6 +3,10 @@ const router = express.Router();
 const db = require('../utilities/db');
 const validator = require('../utilities/validator');
 var User = require('../models/user');
+var Policy = require('../models/policy');
+var AckPolicy = require('../models/ackPolicy');
+var Survey = require('../models/survey'); 
+var AckSurvey = require('../models/ackSurvey'); 
 var multer = require('multer');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -84,21 +88,60 @@ router.post('/register', function(req, res){
 
   
   //validate the request data
-  var valid = validator.validateRegistrant(fname, lname, email, phone, department, password); 
+  var promise = validator.validateRegistrant(fname, lname, email, phone, department, password); 
 
-  valid.then(success => {
-    //validation passed
-    //create User
-    var user = new User(fname, lname, email, phone, department, null, password); 
-    //insert the registrant into the database
-    User.create(user).then(success => {
-      return res.send(success);
-    }, 
-    error => {
-      return res.status(403).send(error);
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+
+    conn.beginTransaction(); 
+    var user; 
+    var policyIds; 
+
+    //validation
+    promise = promise.then(success => {
+      //create User
+      user = new User(null, fname, lname, email, phone, department, null, password); 
+      //insert the registrant into the database
+      return User.create(user, conn);
+    }, err => { 
+      // Validation failed
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(403).send({errMsg: "Invalid registrant info"}); 
+    }); 
+
+    promise = promise.then(success => {
+      //save the user info
+      user = success; 
+      //get policies relevant to this employee
+      return Policy.getPolicyIdsByDept(department.id, conn); 
+    });  
+
+    promise = promise.then(success => {
+      //save the policyids 
+      policyIds = success; 
+      //get surveys relevant to this employee
+      return Survey.getSurveyIdsByDept(department.id, conn); 
+    })
+
+    promise = promise.then(success => {
+      //create ack_policy entries for new employee
+      return Promise.all([AckPolicy.newEmployee(policyIds, user, conn), AckSurvey.newEmployee(success, user, conn)]);
     });
-  }, err => { // Validation failed
-    return res.status(403).send({errMsg: "Invalid registrant info"}); 
+
+    promise = promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send({msg: "Successfully registered employee."}); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    }); 
   });
 });
 
@@ -106,12 +149,11 @@ router.post('/csvCompare', function(req, res){
   upload(req, res, function (err) {
     if (err) {
       // An error occurred when uploading
-      console.log(err);
-      return res.status(422).send("an Error occured")
+      return res.status(422).send({msg: "An error occured with the CSV upload."})
     }  
    // No error occured.
     var path = req.file.path;
-    return res.send("Upload Completed for " + path); 
+    return res.send({msg: "Upload Completed for " + path}); 
   }); 
 }); 
 

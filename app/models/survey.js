@@ -1,6 +1,6 @@
 const db = require('../utilities/db');
 
-function Policy(id, title, description, url, date){
+function Survey(id, title, description, url, date){
   this.id = id; 
   this.title = title; 
   this.description = description; 
@@ -9,15 +9,15 @@ function Policy(id, title, description, url, date){
 }
 
 /**
- * Creates a new entry in the 'policy' table. 
+ * Creates a new entry in the 'survey' table. 
  */
-Policy.create = function(title, description, url, depts, conn){
+Survey.create = function(title, description, url, depts, conn){
   return new Promise((resolve, reject) => {
     var deptParams = getDeptParams(depts); 
     var createDate = new Date(Date.now()); 
     createDate = createDate.toISOString().slice(0,10); 
 
-    conn.query('INSERT INTO policy(title, description, url, date, deptSales, deptGarage, deptAdmin, deptFoodBeverage, ' + 
+    conn.query('INSERT INTO survey(title, description, url, date, deptSales, deptGarage, deptAdmin, deptFoodBeverage, ' + 
     'deptProduction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', [title, description, url, createDate, deptParams[0].relevant, 
     deptParams[1].relevant, deptParams[2].relevant, deptParams[3].relevant, deptParams[4].relevant], 
     function(error, results){
@@ -68,12 +68,12 @@ function getDeptParams(depts){
 }
 
 /**
- * Updates an existing policy entry. 
+ * Updates an existing survey entry. 
  */
-Policy.update = function(policyId, title, description, url, depts, conn) {
+Survey.update = function(surveyId, title, description, url, depts, conn) {
   return new Promise((resolve, reject) => {
     //generate the query based on which values are not null
-    var query = "UPDATE policy SET ";
+    var query = "UPDATE survey SET ";
     var params = []; 
     query = addToQuery(title, "title", query, params); 
     query = addToQuery(description, "description", query, params); 
@@ -88,13 +88,13 @@ Policy.update = function(policyId, title, description, url, depts, conn) {
       query = addToQuery(deptParams[4].relevant, "deptProduction", query, params); 
     }
     query = query.slice(0, query.length-1); 
-    query += " WHERE (policyId = ?);";
-    params.push(policyId); 
+    query += " WHERE (surveyId = ?);";
+    params.push(surveyId); 
 
     //query the database
     conn.query(query, params, function(error, results){
       if(error){
-        error.errMsg = "Error updating the policy in the database."; 
+        error.errMsg = "Error updating the survey in the database."; 
         reject(error); 
       } 
       resolve(deptParams); 
@@ -117,11 +117,11 @@ function addToQuery(param, strAdd, query, params){
   return query; 
 }
 
-Policy.delete = function(policyId, conn){
+Survey.delete = function(surveyId, conn){
   return new Promise((resolve, reject) => {
-    conn.query("UPDATE policy SET deleted=1 WHERE (policyID=?);", [policyId], function(error, results){
+    conn.query("UPDATE survey SET deleted=1 WHERE (surveyID=?);", [surveyId], function(error, results){
       if(error){
-        error.errMsg = "Error soft deleting this policy."; 
+        error.errMsg = "Error soft deleting this survey."; 
         reject(error); 
       } 
       resolve(results); 
@@ -130,24 +130,24 @@ Policy.delete = function(policyId, conn){
 }
 
 /**
- * Gets a list of policies based on the policyIds provided. 
+ * Gets a list of surveys based on the surveyIds provided. 
  */
-Policy.getPoliciesByIds = function(policyIds, conn) {
+Survey.getSurveysByIds = function(surveyIds, conn) {
   return new Promise((resolve, reject) => {
-    //if there are no policyIds return an empty array
-    if(policyIds.length == 0){
+    //if there are no surveyIds return an empty array
+    if(surveyIds.length == 0){
       resolve([]); 
     }
 
     var where = "("; 
     var params = [];
-    for(i in policyIds){
-      params.push(policyIds[i]);
+    for(i in surveyIds){
+      params.push(surveyIds[i]);
       where += "?,"; 
     }
     where = where.slice(0, where.length-1) + ")"; 
 
-    conn.query("SELECT * FROM policy WHERE (policyID IN " + where + ") AND (deleted = 0) ORDER BY date, title;", params, function(error, results){
+    conn.query("SELECT * FROM survey WHERE (surveyID IN " + where + ") AND (deleted = 0) ORDER BY date, title;", params, function(error, results){
       if(error){
         error.errMsg = "There was an error getting this information from the database. Please try again."; 
         reject(error); 
@@ -158,9 +158,9 @@ Policy.getPoliciesByIds = function(policyIds, conn) {
 }
 
 /**
- * Get a list of policy ids based on the department id provided
+ * Get a list of survey ids based on the department id provided
  */
-Policy.getPolicyIdsByDept = function(deptId, conn){
+Survey.getSurveyIdsByDept = function(deptId, conn){
   return new Promise((resolve, reject) => {
     //generate query condition
     var condition = ""; 
@@ -182,9 +182,9 @@ Policy.getPolicyIdsByDept = function(deptId, conn){
         break; 
     }
 
-    conn.query("SELECT policyID FROM policy WHERE (deleted=0) AND " + condition, [], function(error, results){
+    conn.query("SELECT surveyID FROM survey WHERE (deleted=0) AND " + condition, [], function(error, results){
       if(error){
-        error.errMsg = "There was an error getting policies based on deptId from the database. Please try again."; 
+        error.errMsg = "There was an error getting surveys based on deptId from the database. Please try again."; 
         reject(error); 
       } 
       resolve(results); 
@@ -193,13 +193,13 @@ Policy.getPolicyIdsByDept = function(deptId, conn){
 }
 
 /**
- * Gets all policies from the 'policy' table that haven't been deleted. 
+ * Gets all surveys from the 'survey' table that haven't been deleted. 
  */
-Policy.getAllPolicies = function(){
+Survey.getAllSurveys = function(){
   return new Promise((resolve, reject) => {
-    db.query("SELECT * FROM policy WHERE (deleted = 0);", [], function(error, results){
+    db.query("SELECT * FROM survey WHERE (deleted = 0);", [], function(error, results){
       if(error){
-        error.errMsg = "There was an error getting all policies from the database. Please try again."; 
+        error.errMsg = "There was an error getting all surveys from the database. Please try again."; 
         reject(error); 
       }
       resolve(results); 
@@ -207,4 +207,4 @@ Policy.getAllPolicies = function(){
   })
 }
 
-module.exports = Policy; 
+module.exports = Survey; 

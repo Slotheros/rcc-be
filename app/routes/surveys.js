@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../utilities/db'); 
-var Policy = require('../models/policy');
+var Survey = require('../models/survey');
 var User = require('../models/user'); 
-var AckPolicy = require('../models/ackPolicy');
+var AckSurvey = require('../models/ackSurvey');
 
 /**
- * Allows an admin to create a new policy. 
- * Entry is made in the 'policy' table. 
- * Corresponding entries are made in the 'ack_policy' table for all employees in 
- * the departments that the policy is relevant to. 
+ * Allows an admin to create a new survey. 
+ * Entry is made in the 'survey' table. 
+ * Corresponding entries are made in the 'ack_survey' table for all employees in 
+ * the departments that the survey is relevant to. 
  */
 router.post('/create', function(req, res){
   var title = req.body.title; 
@@ -24,20 +24,20 @@ router.post('/create', function(req, res){
     }
     conn.beginTransaction(); 
 
-    var policyId;
+    var surveyId;
     var employees; 
-    var promise = Policy.create(title, description, url, depts, conn).then(success => {
-      policyId = success.insertId; 
+    var promise = Survey.create(title, description, url, depts, conn).then(success => {
+      surveyId = success.insertId; 
       return User.findAllInDepts(depts, conn); 
     });
     
     // get all employees in the given depts
     promise = promise.then(success => {
       employees = success; 
-      return AckPolicy.newPolicy(policyId, employees, conn);
+      return AckSurvey.newSurvey(surveyId, employees, conn);
     });
 
-    // create a policy acknowledgement for each employee
+    // create a survey acknowledgement for each employee
     promise.then(success => {
       conn.commit(); 
       conn.release(); 
@@ -54,7 +54,7 @@ router.post('/create', function(req, res){
 });
 
 /**
- * Returns a list of policies that a user has yet to acknowledge. 
+ * Returns a list of surveys that a user has yet to acknowledge. 
  */
 router.get('/getUnacknowledged/:eId', function(req, res){
   var eId = req.params.eId; 
@@ -64,12 +64,12 @@ router.get('/getUnacknowledged/:eId', function(req, res){
       return res.status(503).send({errMsg: "Unable to establish connection to the database"});
     }
     conn.beginTransaction(); 
-    //get policyIds for all the unacknowledged policies
-    var promise = AckPolicy.getPolicyIds(eId, 0, conn).then(success => {
-      return Policy.getPoliciesByIds(success, conn); 
+    //get surveyIds for all the unacknowledged surveys
+    var promise = AckSurvey.getSurveyIds(eId, 0, conn).then(success => {
+      return Survey.getSurveysByIds(success, conn); 
     });
     
-    //get the policies
+    //get the surveys
     promise.then(success => {
       conn.commit(); 
       conn.release(); 
@@ -86,7 +86,7 @@ router.get('/getUnacknowledged/:eId', function(req, res){
 });
 
 /**
- * Returns a list of policies that a user has already acknowledged. 
+ * Returns a list of surveys that a user has already acknowledged. 
  */
 router.get('/getAcknowledged/:eId', function(req, res){
   var eId = req.params.eId; 
@@ -96,12 +96,12 @@ router.get('/getAcknowledged/:eId', function(req, res){
       return res.status(503).send({errMsg: "Unable to establish connection to the database"});
     }
     conn.beginTransaction(); 
-    //get policyIds for all the acknowledged policies
-    var promise = AckPolicy.getPolicyIds(eId, 1, conn).then(success => {
-      return Policy.getPoliciesByIds(success, conn); 
+    //get surveyIds for all the acknowledged surveys
+    var promise = AckSurvey.getSurveyIds(eId, 1, conn).then(success => {
+      return Survey.getSurveysByIds(success, conn); 
     });
     
-    //get the policies
+    //get the surveys
     promise.then(success => {
       conn.commit(); 
       conn.release(); 
@@ -118,14 +118,14 @@ router.get('/getAcknowledged/:eId', function(req, res){
 });
 
 /**
- * Allows the admin to update any policy.
- * The policy's title, description, url, and depts can be updated. 
- * These changes will be made in the 'policy' table, and if any changes
+ * Allows the admin to update any survey.
+ * The survey's title, description, url, and depts can be updated. 
+ * These changes will be made in the 'survey' table, and if any changes
  * have been made to the depts, then changes will be made in the 
- * 'ack_policy' table as well. 
+ * 'ack_survey' table as well. 
  */
 router.post('/update', function(req, res) {
-  var policyId = req.body.policyId; 
+  var surveyId = req.body.surveyId; 
   var title = req.body.title ? req.body.title : null; 
   var description = req.body.description ? req.body.description : null; 
   var url = req.body.url ? req.body.url : null; 
@@ -149,8 +149,8 @@ router.post('/update', function(req, res) {
     var relevantDepts = []; 
     var irrelevantDepts = []; 
 
-    var promise = Policy.update(policyId, title, description, url, depts, conn).then(success => {
-      //otherwise perform the process to insert/update ack_policy entries based on dept changes
+    var promise = Survey.update(surveyId, title, description, url, depts, conn).then(success => {
+      //otherwise perform the process to insert/update ack_survey entries based on dept changes
       for(i in success){
         if(success[i].relevant == 1){
           relevantDepts.push(success[i]); 
@@ -159,8 +159,8 @@ router.post('/update', function(req, res) {
         }
       }
       
-      //unack all entries that are related to this policy so users have to ack it again
-      return AckPolicy.unackPolicy(policyId, conn);
+      //unack all entries that are related to this survey so users have to ack it again
+      return AckSurvey.unackSurvey(surveyId, conn);
     });
 
     promise = promise.then(success => {
@@ -169,9 +169,9 @@ router.post('/update', function(req, res) {
         return Promise.resolve(success); 
       } 
       
-      // makes changes to the ack_policy table based on which depts are still relevant
-      return Promise.all([AckPolicy.makeDeptsRelevant(relevantDepts, policyId, conn), 
-        AckPolicy.makeDeptsIrrelevant(irrelevantDepts, policyId, conn)]);
+      // makes changes to the ack_survey table based on which depts are still relevant
+      return Promise.all([AckSurvey.makeDeptsRelevant(relevantDepts, surveyId, conn), 
+        AckSurvey.makeDeptsIrrelevant(irrelevantDepts, surveyId, conn)]);
     });
     
     promise.then(success => {
@@ -190,11 +190,11 @@ router.post('/update', function(req, res) {
 });
 
 /**
- * Allows an admin to delete a policy. The policy and it's related 
- * ack_policy entries will be soft-deleted in the database. 
+ * Allows an admin to delete a survey. The survey and it's related 
+ * ack_survey entries will be soft-deleted in the database. 
  */
 router.post('/delete', function(req, res) {
-  var policyId = req.body.policyId; 
+  var surveyId = req.body.surveyId; 
 
   db.getConnection((err, conn) => {
     if(err){
@@ -202,12 +202,12 @@ router.post('/delete', function(req, res) {
     }
     conn.beginTransaction(); 
 
-    //delete the policy
-    var promise = Policy.delete(policyId, conn).then(success => {
-      return AckPolicy.deletePolicies(policyId, conn);
+    //delete the survey
+    var promise = Survey.delete(surveyId, conn).then(success => {
+      return AckSurvey.deleteSurveys(surveyId, conn);
     });
     
-    //delete all related entries in the ack_policy table
+    //delete all related entries in the ack_survey table
     promise.then(success => {
       conn.commit(); 
       conn.release(); 
@@ -224,13 +224,13 @@ router.post('/delete', function(req, res) {
 });
 
 /**
- * Allows a user to acknowledge a policy.
+ * Allows a user to acknowledge a survey.
  */
 router.post('/acknowledge', function(req, res) {
-  var policyId = req.body.policyId; 
+  var surveyId = req.body.surveyId; 
   var eId = req.body.eId; 
 
-  AckPolicy.acknowledgePolicy(eId, policyId).then(success => {
+  AckSurvey.acknowledgeSurvey(eId, surveyId).then(success => {
     return res.send(success); 
   }, error => {
     return res.status(500).send(error); 
@@ -238,10 +238,10 @@ router.post('/acknowledge', function(req, res) {
 });
 
 /**
- * Allows admin to get all policies for all departments. 
+ * Allows admin to get all surveys for all departments. 
  */
 router.get('/getAll', function(req, res) {
-  Policy.getAllPolicies().then(success => {
+  Survey.getAllSurveys().then(success => {
     return res.send(success); 
   }, error => {
     return res.status(500).send(error); 
