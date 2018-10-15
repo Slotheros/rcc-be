@@ -53,7 +53,7 @@ AckSurvey.newEmployee = function(surveyIds, employee, conn){
           reject(error); 
         } else{
           //reaches end of list so it resolved successfully
-          if(count == surveyIds.length-1){
+          if(count == surveyIds.length){
             resolve({success: "Successfully created acknowledgements for employee for all relevant surveys."}); 
           }
         }

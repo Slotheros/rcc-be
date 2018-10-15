@@ -53,7 +53,7 @@ AckPolicy.newEmployee = function(policyIds, employee, conn){
           reject(error); 
         } else{
           //reaches end of list so it resolved successfully
-          if(count == policyIds.length-1){
+          if(count == policyIds.length){
             resolve({success: "Successfully created acknowledgements for employee for all relevant policies."}); 
           }
         }
