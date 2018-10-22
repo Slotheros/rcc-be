@@ -8,6 +8,7 @@ var AckPolicy = require('../models/ackPolicy');
 var Survey = require('../models/survey'); 
 var AckSurvey = require('../models/ackSurvey'); 
 var multer = require('multer');
+var path = require('path');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, './app/uploads')
@@ -15,8 +16,19 @@ var storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, file.fieldname + '.csv'); 
   }
-})
-var upload = multer({ storage: storage }).single('csvCompare');
+});
+var upload = multer({ 
+  storage: storage,
+  fileFilter: function (req, file, callback) {
+    var ext = path.extname(file.originalname);
+    if(ext !== '.csv') {
+        return callback(new Error('Only csvs are allowed'));
+    }
+    return callback(null, true);
+  }  
+}).single('csvCompare');
+const fs = require('fs'); 
+const parser = require('csv-parser');
 
 /**
  * Endpoint for getting all users
@@ -145,16 +157,54 @@ router.post('/register', function(req, res){
   });
 });
 
+/**
+ * Uploads a csv to the server, and processes its contents. 
+ * Returns two lists: 1) list of employees that were listed in the csv file but
+ * weren't in our database 2) list of employees in our database that weren't
+ * in the csv file
+ */
 router.post('/csvCompare', function(req, res){
   upload(req, res, function (err) {
     if (err) {
       // An error occurred when uploading
       return res.status(422).send({msg: "An error occured with the CSV upload."})
     }  
-   // No error occured.
-    var path = req.file.path;
-    return res.send({msg: "Upload Completed for " + path}); 
+    // No error occured.
+    var csvData = [];
+    var emails = ""; 
+    var phones = ""; 
+    var stream = fs.createReadStream(req.file.path)
+      .pipe(parser({delimiter: ','}))
+      .on('data', function(csvRow){
+        csvRow['Home Cell'] = "+" + csvRow['Home Cell'].replace(/-/g, '');
+        csvData.push(csvRow); 
+        emails += csvRow['Personal eMail'] + ","; 
+        phones += csvRow['Home Cell'] + ",";
+      })
+      .on('end', function(){
+        emails = emails.slice(0, emails.length-1); 
+        phones = phones.slice(0, phones.length-1);
+        return csvComparison(res, csvData, emails, phones); 
+      });
   }); 
 }); 
+
+function csvComparison(res, csvData, emails, phones) {
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    Promise.all([User.findAllNotInDb(csvData, conn), User.findAllNotInCsv(emails, phones, conn)]).then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
+}
 
 module.exports = router;
