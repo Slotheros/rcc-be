@@ -46,17 +46,20 @@ router.post('/send', function(req, res) {
 	const mailOptions = {
 	from: req.body.email,
 	to: "teamgarnetgroup@gmail.com",
-	subject: "Message from " + email + "via the HR Portal",
+	subject: "Message from " + email + " via the HR Portal",
 	generateTextFromHTML: true,
-	text: message
+	text: message + "\n\nDO NOT REPLY TO THIS EMAIL"
 	// html: "<p>" + message + "</p>"
 	};
 
 	smtpTransport.sendMail(mailOptions, (error, response) => {
-		error ? console.log(error) : console.log(response);
+		if(error){
+			error.errMsg = "Error occurred sending an email to HR"; 
+			return res.status(500).send(error); 
+		}
+		return res.send(response); 
 		smtpTransport.close(); 
 	});
-
 });
 
 module.exports = router; 
