@@ -162,30 +162,34 @@ User.findAllNotInDb = function(csvData, conn) {
     }
     var count = 0; 
     var notInDb = [];
-    for(row in csvData){
+    csvData.forEach(function(csvRow){
+      var email = csvRow['Personal eMail'];
+      var phone = csvRow['Home Cell'];
       conn.query("SELECT * from employee WHERE (email=?) AND (phone=?);", 
-      [csvData[row]['Personal eMail'], csvData[row]['Home Cell']], function(error, results) {
+      [email, phone], function(error, results) {
         if(error){
           error.errMsg = "Error occurred in User.findAllNotInDb"; 
           reject(error); 
         } 
         else{
-          //user wasn't found in db
-          if(results.length == 0){
-            conn.query("UPDATE employee SET status=0 WHERE (email=?) AND (phone=?);", [csvData[row]['Personal eMail'], csvData[row]['Home Cell']], function(error, results){
+          //user was found in db
+          if(results.length !== 0){
+            var iEmail = results[0].email; 
+            var iPhone = results[0].phone; 
+            conn.query("UPDATE employee SET status=0 WHERE (email=?) AND (phone=?);", [iEmail, iPhone], function(error, results){
               if(error) {
                 error.errMsg = "Error occurred in User.findAllInDb";
                 reject(error); 
               }
-              notInDb.push(csvData[row]);
               count++;
               if(count == csvData.length) {
                 resolve(notInDb); 
               }
             });
           } 
-          //user was found in db
+          //user wasn't found in db
           else{
+            notInDb.push(csvRow);
             count++; 
             if(count == csvData.length){
               resolve(notInDb); 
@@ -193,10 +197,13 @@ User.findAllNotInDb = function(csvData, conn) {
           }
         }
       });
-    }
+    }); 
   }); 
 }
 
+/**
+ * Finds all users that are in our database that weren't listed in the csv file. 
+ */
 User.findAllNotInCsv = function(emails, phones, conn) {
   return new Promise((resolve, reject) => {
     if(emails.length == 0 || phones.length == 0){

@@ -147,6 +147,12 @@ router.post('/register', function(req, res){
   });
 });
 
+/**
+ * Uploads a csv to the server, and processes its contents. 
+ * Returns two lists: 1) list of employees that were listed in the csv file but
+ * weren't in our database 2) list of employees in our database that weren't
+ * in the csv file
+ */
 router.post('/csvCompare', function(req, res){
   upload(req, res, function (err) {
     if (err) {
@@ -170,7 +176,6 @@ router.post('/csvCompare', function(req, res){
         phones = phones.slice(0, phones.length-1);
         return csvComparison(res, csvData, emails, phones); 
       });
-    
   }); 
 }); 
 
