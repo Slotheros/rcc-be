@@ -8,6 +8,7 @@ var AckPolicy = require('../models/ackPolicy');
 var Survey = require('../models/survey'); 
 var AckSurvey = require('../models/ackSurvey'); 
 var multer = require('multer');
+var path = require('path');
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, './app/uploads')
@@ -15,8 +16,17 @@ var storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, file.fieldname + '.csv'); 
   }
-})
-var upload = multer({ storage: storage }).single('csvCompare');
+});
+var upload = multer({ 
+  storage: storage,
+  fileFilter: function (req, file, callback) {
+    var ext = path.extname(file.originalname);
+    if(ext !== '.csv') {
+        return callback(new Error('Only csvs are allowed'));
+    }
+    return callback(null, true);
+  }  
+}).single('csvCompare');
 const fs = require('fs'); 
 const parser = require('csv-parser');
 
