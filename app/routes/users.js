@@ -160,6 +160,7 @@ router.post('/csvCompare', function(req, res){
     var stream = fs.createReadStream(req.file.path)
       .pipe(parser({delimiter: ','}))
       .on('data', function(csvRow){
+        csvRow['Home Cell'] = "+" + csvRow['Home Cell'].replace(/-/g, '');
         csvData.push(csvRow); 
         emails += csvRow['Personal eMail'] + ","; 
         phones += csvRow['Home Cell'] + ",";
