@@ -121,11 +121,11 @@ User.findPhonesInDepts = function(departments){
 }
 
 /**
- * Takes in a user object and searches the employee table for a match
+ * Takes in a user object and searches the employee table for a match. Used specifically for login auth.
  * @param {User} user 
  * @param {*} callback 
  */
-User.findOne = function(user, callback){
+User.findOneForLogin = function(user, callback){
   var userData; 
   new Promise((resolve, reject) => {
     db.query(`SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
@@ -149,6 +149,71 @@ User.findOne = function(user, callback){
       {id: userData.usertypeID, name: userData.usertype}, userData.password)), 
     err => callback(err, null)
   );
+}
+
+/**
+ * Finds all the users listed in the csv file that aren't in the database. If the user is in the database, then 
+ * their status is set to active automatically. 
+ */
+User.findAllNotInDb = function(csvData, conn) {
+  return new Promise((resolve, reject) => {
+    if(csvData.length == 0){
+      resolve([]); 
+    }
+    var count = 0; 
+    var notInDb = [];
+    for(row in csvData){
+      conn.query("SELECT * from employee WHERE (email=?) AND (phone=?);", 
+      [csvData[row]['Personal eMail'], csvData[row]['Home Cell']], function(error, results) {
+        if(error){
+          error.errMsg = "Error occurred in User.findAllNotInDb"; 
+          reject(error); 
+        } 
+        else{
+          //user wasn't found in db
+          if(results.length == 0){
+            conn.query("UPDATE employee SET status=0 WHERE (email=?) AND (phone=?);", [csvData[row]['Personal eMail'], csvData[row]['Home Cell']], function(error, results){
+              if(error) {
+                error.errMsg = "Error occurred in User.findAllInDb";
+                reject(error); 
+              }
+              notInDb.push(csvData[row]);
+              count++;
+              if(count == csvData.length) {
+                resolve(notInDb); 
+              }
+            });
+          } 
+          //user was found in db
+          else{
+            count++; 
+            if(count == csvData.length){
+              resolve(notInDb); 
+            }
+          }
+        }
+      });
+    }
+  }); 
+}
+
+User.findAllNotInCsv = function(emails, phones, conn) {
+  return new Promise((resolve, reject) => {
+    if(emails.length == 0 || phones.length == 0){
+      resolve([]); 
+    }
+    conn.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
+    "role.usertypeID, role.usertype FROM employee AS emp JOIN " + 
+    "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
+    "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE (emp.email NOT IN (?)) AND (emp.phone NOT IN (?));", 
+    [emails, phones], function(error, results) {
+      if(error){
+        error.errMsg = "Error occurred in User.findAllNotInCsv"; 
+        reject(error); 
+      }
+      resolve(results); 
+    })
+  });
 }
 
 /**

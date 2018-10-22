@@ -17,6 +17,8 @@ var storage = multer.diskStorage({
   }
 })
 var upload = multer({ storage: storage }).single('csvCompare');
+const fs = require('fs'); 
+const parser = require('csv-parser');
 
 /**
  * Endpoint for getting all users
@@ -151,10 +153,42 @@ router.post('/csvCompare', function(req, res){
       // An error occurred when uploading
       return res.status(422).send({msg: "An error occured with the CSV upload."})
     }  
-   // No error occured.
-    var path = req.file.path;
-    return res.send({msg: "Upload Completed for " + path}); 
+    // No error occured.
+    var csvData = [];
+    var emails = ""; 
+    var phones = ""; 
+    var stream = fs.createReadStream(req.file.path)
+      .pipe(parser({delimiter: ','}))
+      .on('data', function(csvRow){
+        csvData.push(csvRow); 
+        emails += csvRow['Personal eMail'] + ","; 
+        phones += csvRow['Home Cell'] + ",";
+      })
+      .on('end', function(){
+        emails = emails.slice(0, emails.length-1); 
+        phones = phones.slice(0, phones.length-1);
+        return csvComparison(res, csvData, emails, phones); 
+      });
+    
   }); 
 }); 
+
+function csvComparison(res, csvData, emails, phones) {
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    Promise.all([User.findAllNotInDb(csvData, conn), User.findAllNotInCsv(emails, phones, conn)]).then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    }, error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
+}
 
 module.exports = router;
