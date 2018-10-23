@@ -132,23 +132,28 @@ User.findOneForLogin = function(user, callback){
       role.usertypeID, role.usertype, emp.password FROM employee AS emp JOIN 
       department AS dept ON (emp.departmentID = dept.departmentID) JOIN 
       usertype AS role ON (emp.usertypeID = role.usertypeID)
-      WHERE(email = ?)`, [user.email], function(error, results, fields){
+      WHERE(email = ?) AND (status= ?);`, [user.email, 1], function(error, results, fields){
       if(error){
         reject(error); 
       }
-      userData = results[0];
-      if(userData == undefined || userData == null){
-        reject({errMsg: "This user doesn't exist in the database"});
+      if(results == undefined || results == null || results.length == 0){
+        resolve(false);
       } else{
-        resolve(); 
+        resolve(true); 
       }
     })
-  }).then(success => 
-    callback(null, new User(userData.eID, userData.fname, userData.lname, userData.email, userData.phone,
-      {id: userData.departmentID, name: userData.department}, 
-      {id: userData.usertypeID, name: userData.usertype}, userData.password)), 
-    err => callback(err, null)
-  );
+  }).then(success => {
+    if(success){
+      callback(null, new User(userData.eID, userData.fname, userData.lname, userData.email, userData.phone,
+        {id: userData.departmentID, name: userData.department}, 
+        {id: userData.usertypeID, name: userData.usertype}, userData.password));
+    }
+    else {
+      callback(null, false); 
+    }
+  }, err => {
+    callback(err, null);
+  });
 }
 
 /**
