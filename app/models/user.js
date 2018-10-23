@@ -139,6 +139,7 @@ User.findOneForLogin = function(user, callback){
       if(results == undefined || results == null || results.length == 0){
         resolve(false);
       } else{
+        userData = results[0];
         resolve(true); 
       }
     })
