@@ -182,7 +182,7 @@ User.findAllNotInDb = function(csvData, conn) {
           if(results.length !== 0){
             var iEmail = results[0].email; 
             var iPhone = results[0].phone; 
-            conn.query("UPDATE employee SET status=0 WHERE (email=?) AND (phone=?);", [iEmail, iPhone], function(error, results){
+            conn.query("UPDATE employee SET status=1 WHERE (email=?) AND (phone=?);", [iEmail, iPhone], function(error, results){
               if(error) {
                 error.errMsg = "Error occurred in User.findAllInDb";
                 reject(error); 
