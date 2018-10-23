@@ -11,6 +11,7 @@ const authRoute = require('./app/routes/auth');
 const alertsRoute = require('./app/routes/alerts');
 const policiesRoute = require('./app/routes/policies'); 
 const surveysRoute = require('./app/routes/surveys'); 
+const emailRoute = require('./app/routes/email');
 
 const app = express();
 
@@ -55,5 +56,6 @@ app.use('/auth', authRoute);
 app.use('/alerts', alertsRoute); 
 app.use('/policies', policiesRoute); 
 app.use('/surveys', surveysRoute); 
+app.use('/email', emailRoute); 
 
 app.listen(3000, () => console.log('Running on port 3000'));
