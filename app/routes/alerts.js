@@ -31,7 +31,6 @@ router.post('/sms', function(req, res) {
 		//returns list of numbers that twilio wasn't able to send the alert to
 		return res.status(200).send(failedNumbers);         
 	}, function(error){
-		console.log(error);
 		return res.status(400).send(error); 
 	});  
 });
