@@ -28,7 +28,7 @@ AckSurvey.newSurvey = function(surveyId, employees, conn){
           reject(error); 
         } else{
           //reaches end of list so it resolved successfully
-          if(count == employees.length-1){
+          if(count == employees.length){
             resolve({success: "Successfully created acknowledgements for survey for all relevant users."}); 
           }
         }
