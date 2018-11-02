@@ -249,11 +249,11 @@ router.get('/getAll', function(req, res) {
     conn.beginTransaction(); 
 
     var promise = Policy.getAllPolicies(conn).then(success => {
-      return AckPolicy.setAckNeeded(success, conn);
+      return AckPolicy.getAckNeeded(success, conn);
     });
 
     promise = promise.then(success=> {
-      return AckPolicy.setAckCompleted(success, conn); 
+      return AckPolicy.getAckCompleted(success, conn); 
     });
 
     promise = promise.then(success => {
@@ -292,11 +292,11 @@ router.get('/getAllForDept/:deptId', function(req, res) {
     });
 
     promise = promise.then(success=> {
-      return AckPolicy.setAckNeeded(success, conn);
+      return AckPolicy.getAckNeeded(success, conn);
     })
 
     promise = promise.then(success=> {
-      return AckPolicy.setAckCompleted(success, conn); 
+      return AckPolicy.getAckCompleted(success, conn); 
     });
 
     promise = promise.then(success => {

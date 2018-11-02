@@ -194,11 +194,11 @@ AckPolicy.makeDeptsIrrelevant = function(irrelevantDepts, policyId, conn) {
   });
 }
 
-AckPolicy.setAckNeeded = function(policies, conn){
+AckPolicy.getAckNeeded = function(policies, conn){
   return new Promise((resolve, reject) => {
     var count = 0; 
     policies.forEach(function(policy){
-      conn.query("SELECT COUNT(eID) AS emps FROM ack_policy WHERE (policyID=?);", [policy.policyID], function(error, results){
+      conn.query("SELECT COUNT(eID) AS emps FROM ack_policy WHERE (policyID=?) AND (deleted=0);", [policy.policyID], function(error, results){
         if(error){
           error.errMsg = "Failed to set total acknowlegements needed for " + policy.policyId; 
           reject(error); 
@@ -213,11 +213,11 @@ AckPolicy.setAckNeeded = function(policies, conn){
   });
 }
 
-AckPolicy.setAckCompleted = function(policies, conn){
+AckPolicy.getAckCompleted = function(policies, conn){
   return new Promise((resolve, reject) => {
     var count = 0; 
     policies.forEach(function(policy){
-      conn.query("SELECT COUNT(eID) AS acks FROM ack_policy WHERE (policyID=?) AND (ack=1);", [policy.policyID], function(error, results){
+      conn.query("SELECT COUNT(eID) AS acks FROM ack_policy WHERE (policyID=?) AND (ack=1) AND (deleted=0);", [policy.policyID], function(error, results){
         if(error){
           error.errMsg = "Failed to set total acknowlegements needed for " + policy.policyId; 
           reject(error); 
