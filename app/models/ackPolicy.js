@@ -232,9 +232,9 @@ AckPolicy.getAckCompleted = function(policies, conn){
   });
 }
 
-AckPolicy.getEmployeesByPolicyId = function(policyId, conn) {
+AckPolicy.getUnackEmployees = function(policyId, conn) {
   return new Promise((resolve, reject) => {
-    conn.query("SELECT eID from ack_policy WHERE (policyID = ?) AND (deleted=0);", [policyId], function(error, results){
+    conn.query("SELECT eID from ack_policy WHERE (policyID = ?) AND (deleted=0) AND (ack=0);", [policyId], function(error, results){
       if(error){
         error.errMsg = "Failed to get eIds for policy #" + policy.policyId; 
         reject(error); 

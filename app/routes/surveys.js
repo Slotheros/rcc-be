@@ -325,7 +325,7 @@ router.get('/getUnackEmployees/:surveyId', function(req, res) {
     }
     conn.beginTransaction(); 
 
-    var promise = AckSurvey.getEmployeesBySurveyId(surveyId, conn).then(success => {
+    var promise = AckSurvey.getUnackEmployees(surveyId, conn).then(success => {
       return User.getEmployeesByIds(success, conn); 
     });
 

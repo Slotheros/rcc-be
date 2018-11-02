@@ -232,9 +232,9 @@ AckSurvey.getAckCompleted = function(surveys, conn){
   });
 }
 
-AckSurvey.getEmployeesBySurveyId = function(surveyId, conn) {
+AckSurvey.getUnackEmployees = function(surveyId, conn) {
   return new Promise((resolve, reject) => {
-    conn.query("SELECT eID from ack_survey WHERE (surveyID = ?) AND (deleted=0);", [surveyId], function(error, results){
+    conn.query("SELECT eID from ack_survey WHERE (surveyID = ?) AND (deleted=0) AND (ack=0);", [surveyId], function(error, results){
       if(error){
         error.errMsg = "Failed to get eIds for survey #" + survey.surveyId; 
         reject(error); 

@@ -325,7 +325,7 @@ router.get('/getUnackEmployees/:policyId', function(req, res) {
     }
     conn.beginTransaction(); 
 
-    var promise = AckPolicy.getEmployeesByPolicyId(policyId, conn).then(success => {
+    var promise = AckPolicy.getUnackEmployees(policyId, conn).then(success => {
       return User.getEmployeesByIds(success, conn); 
     });
 
