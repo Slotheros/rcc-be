@@ -166,19 +166,19 @@ Policy.getPolicyIdsByDept = function(deptId, conn){
     var condition = ""; 
     switch(deptId){
       case 1: 
-        condition = "(deptSales = 1);"
+        condition = "(deptSales = 1);";
         break; 
       case 2: 
-        condition = "(deptGarage = 1);"
+        condition = "(deptGarage = 1);";
         break; 
       case 3: 
-        condition = "(deptAdmin = 1);"
+        condition = "(deptAdmin = 1);";
         break; 
       case 4: 
-        condition = "(deptFoodBeverage = 1);"
+        condition = "(deptFoodBeverage = 1);";
         break; 
       case 5: 
-        condition = "(deptProduction = 1);"
+        condition = "(deptProduction = 1);";
         break; 
     }
 
@@ -195,9 +195,9 @@ Policy.getPolicyIdsByDept = function(deptId, conn){
 /**
  * Gets all policies from the 'policy' table that haven't been deleted. 
  */
-Policy.getAllPolicies = function(){
+Policy.getAllPolicies = function(conn){
   return new Promise((resolve, reject) => {
-    db.query("SELECT * FROM policy WHERE (deleted = 0);", [], function(error, results){
+    conn.query("SELECT * FROM policy WHERE (deleted = 0);", [], function(error, results){
       if(error){
         error.errMsg = "There was an error getting all policies from the database. Please try again."; 
         reject(error); 

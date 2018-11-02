@@ -238,14 +238,109 @@ router.post('/acknowledge', function(req, res) {
 });
 
 /**
- * Allows admin to get all policies for all departments. 
+ * Allows admin to get all policies for all departments. Attaches a list of 
+ * employees that haven't acknowledged the policy to each policy object.
  */
 router.get('/getAll', function(req, res) {
-  Policy.getAllPolicies().then(success => {
-    return res.send(success); 
-  }, error => {
-    return res.status(500).send(error); 
-  });
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+
+    var promise = Policy.getAllPolicies(conn).then(success => {
+      return AckPolicy.setAckNeeded(success, conn);
+    });
+
+    promise = promise.then(success=> {
+      return AckPolicy.setAckCompleted(success, conn); 
+    });
+
+    promise = promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  }); 
+});
+
+/**
+ * Allows a dept head to get all policies pertaining to their department. 
+ * Attaches a list of employees that haven't acknowledged the policy to each policy object.
+ */
+router.get('/getAllForDept/:deptId', function(req, res) {
+  var deptId = Number.parseInt(req.params.deptId);
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+
+    var promise = Policy.getPolicyIdsByDept(deptId, conn).then(success => {
+      var policyIds = [];
+      success.forEach(function(policy) {
+        policyIds.push(policy.policyID); 
+      })
+      return Policy.getPoliciesByIds(policyIds, conn); 
+    });
+
+    promise = promise.then(success=> {
+      return AckPolicy.setAckNeeded(success, conn);
+    })
+
+    promise = promise.then(success=> {
+      return AckPolicy.setAckCompleted(success, conn); 
+    });
+
+    promise = promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  }); 
+});
+
+/**
+ * Returns a list of all employees that haven't acknowledged a policy.
+ */
+router.get('/getUnackEmployees/:policyId', function(req, res) {
+  var policyId = req.params.policyId; 
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+
+    var promise = AckPolicy.getEmployeesByPolicyId(policyId, conn).then(success => {
+      return User.getEmployeesByIds(success, conn); 
+    });
+
+    promise = promise.then(success=> {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.send(error); 
+    });
+  })
 });
 
 module.exports = router; 

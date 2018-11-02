@@ -229,6 +229,34 @@ User.findAllNotInCsv = function(emails, phones, conn) {
   });
 }
 
+User.getEmployeesByIds = function(eIds, conn){
+  return new Promise((resolve, reject) => {
+    //if there are no policyIds return an empty array
+    if(eIds.length == 0){
+      resolve([]); 
+    }
+
+    var where = "("; 
+    var params = [];
+    for(i in eIds){
+      params.push(eIds[i]);
+      where += "?,"; 
+    }
+    where = where.slice(0, where.length-1) + ")"; 
+    conn.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
+      "role.usertypeID, role.usertype FROM employee AS emp JOIN " + 
+      "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
+      "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE (eID IN " + where + ") AND (status=1);", params, 
+      function(error, results){
+      if(error){
+        error.errMsg = "Error occurred in User.getEmployeesByIds"; 
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  });
+}
+
 /**
  * Returns an object that contains all of the information in a User object sans password.
  * @param {User} user 

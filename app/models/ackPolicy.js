@@ -194,4 +194,58 @@ AckPolicy.makeDeptsIrrelevant = function(irrelevantDepts, policyId, conn) {
   });
 }
 
+AckPolicy.setAckNeeded = function(policies, conn){
+  return new Promise((resolve, reject) => {
+    var count = 0; 
+    policies.forEach(function(policy){
+      conn.query("SELECT COUNT(eID) AS emps FROM ack_policy WHERE (policyID=?);", [policy.policyID], function(error, results){
+        if(error){
+          error.errMsg = "Failed to set total acknowlegements needed for " + policy.policyId; 
+          reject(error); 
+        }
+        policy.total = results[0].emps; 
+        count++; 
+        if(count == policies.length){
+          resolve(policies); 
+        }
+      });
+    }); 
+  });
+}
+
+AckPolicy.setAckCompleted = function(policies, conn){
+  return new Promise((resolve, reject) => {
+    var count = 0; 
+    policies.forEach(function(policy){
+      conn.query("SELECT COUNT(eID) AS acks FROM ack_policy WHERE (policyID=?) AND (ack=1);", [policy.policyID], function(error, results){
+        if(error){
+          error.errMsg = "Failed to set total acknowlegements needed for " + policy.policyId; 
+          reject(error); 
+        }
+        policy.acks = results[0].acks; 
+        count++; 
+        if(count == policies.length){
+          resolve(policies); 
+        }
+      });
+    }); 
+  });
+}
+
+AckPolicy.getEmployeesByPolicyId = function(policyId, conn) {
+  return new Promise((resolve, reject) => {
+    conn.query("SELECT eID from ack_policy WHERE (policyID = ?) AND (deleted=0);", [policyId], function(error, results){
+      if(error){
+        error.errMsg = "Failed to get eIds for policy #" + policy.policyId; 
+        reject(error); 
+      }
+      var eIds = [];
+      results.forEach(function(eId){
+        eIds.push(eId.eID); 
+      })
+      resolve(eIds); 
+    });
+  }); 
+}
+
 module.exports = AckPolicy; 
