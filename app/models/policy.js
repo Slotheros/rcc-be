@@ -188,7 +188,7 @@ Policy.getPolicyIdsByDept = function(deptId, conn){
         reject(error); 
       } 
       resolve(results); 
-    })
+    });
   });
 }
 
@@ -204,7 +204,7 @@ Policy.getAllPolicies = function(conn){
       }
       resolve(results); 
     });
-  })
+  });
 }
 
 module.exports = Policy; 

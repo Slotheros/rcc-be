@@ -195,9 +195,9 @@ Survey.getSurveyIdsByDept = function(deptId, conn){
 /**
  * Gets all surveys from the 'survey' table that haven't been deleted. 
  */
-Survey.getAllSurveys = function(){
+Survey.getAllSurveys = function(conn){
   return new Promise((resolve, reject) => {
-    db.query("SELECT * FROM survey WHERE (deleted = 0);", [], function(error, results){
+    conn.query("SELECT * FROM survey WHERE (deleted = 0);", [], function(error, results){
       if(error){
         error.errMsg = "There was an error getting all surveys from the database. Please try again."; 
         reject(error); 

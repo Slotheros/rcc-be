@@ -194,4 +194,58 @@ AckSurvey.makeDeptsIrrelevant = function(irrelevantDepts, surveyId, conn) {
   });
 }
 
+AckSurvey.getAckNeeded = function(surveys, conn){
+  return new Promise((resolve, reject) => {
+    var count = 0; 
+    surveys.forEach(function(survey){
+      conn.query("SELECT COUNT(eID) AS emps FROM ack_survey WHERE (surveyID=?) AND (deleted=0);", [survey.surveyID], function(error, results){
+        if(error){
+          error.errMsg = "Failed to set total acknowlegements needed for " + survey.surveyId; 
+          reject(error); 
+        }
+        survey.total = results[0].emps; 
+        count++; 
+        if(count == surveys.length){
+          resolve(surveys); 
+        }
+      });
+    }); 
+  });
+}
+
+AckSurvey.getAckCompleted = function(surveys, conn){
+  return new Promise((resolve, reject) => {
+    var count = 0; 
+    surveys.forEach(function(survey){
+      conn.query("SELECT COUNT(eID) AS acks FROM ack_survey WHERE (surveyID=?) AND (ack=1) AND (deleted=0);", [survey.surveyID], function(error, results){
+        if(error){
+          error.errMsg = "Failed to set total acknowlegements needed for " + survey.surveyId; 
+          reject(error); 
+        }
+        survey.acks = results[0].acks; 
+        count++; 
+        if(count == surveys.length){
+          resolve(surveys); 
+        }
+      });
+    }); 
+  });
+}
+
+AckSurvey.getEmployeesBySurveyId = function(surveyId, conn) {
+  return new Promise((resolve, reject) => {
+    conn.query("SELECT eID from ack_survey WHERE (surveyID = ?) AND (deleted=0);", [surveyId], function(error, results){
+      if(error){
+        error.errMsg = "Failed to get eIds for survey #" + survey.surveyId; 
+        reject(error); 
+      }
+      var eIds = [];
+      results.forEach(function(eId){
+        eIds.push(eId.eID); 
+      })
+      resolve(eIds); 
+    });
+  }); 
+}
+
 module.exports = AckSurvey; 
