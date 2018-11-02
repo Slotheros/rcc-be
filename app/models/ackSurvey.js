@@ -196,6 +196,9 @@ AckSurvey.makeDeptsIrrelevant = function(irrelevantDepts, surveyId, conn) {
 
 AckSurvey.getAckNeeded = function(surveys, conn){
   return new Promise((resolve, reject) => {
+    if(surveys.length == 0){
+      resolve([]); 
+    }
     var count = 0; 
     surveys.forEach(function(survey){
       conn.query("SELECT COUNT(eID) AS emps FROM ack_survey WHERE (surveyID=?) AND (deleted=0);", [survey.surveyID], function(error, results){
@@ -215,6 +218,9 @@ AckSurvey.getAckNeeded = function(surveys, conn){
 
 AckSurvey.getAckCompleted = function(surveys, conn){
   return new Promise((resolve, reject) => {
+    if(surveys.length == 0){
+      resolve([]); 
+    }
     var count = 0; 
     surveys.forEach(function(survey){
       conn.query("SELECT COUNT(eID) AS acks FROM ack_survey WHERE (surveyID=?) AND (ack=1) AND (deleted=0);", [survey.surveyID], function(error, results){

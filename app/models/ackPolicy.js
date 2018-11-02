@@ -196,6 +196,9 @@ AckPolicy.makeDeptsIrrelevant = function(irrelevantDepts, policyId, conn) {
 
 AckPolicy.getAckNeeded = function(policies, conn){
   return new Promise((resolve, reject) => {
+    if(policies.length == 0){
+      resolve([]); 
+    }
     var count = 0; 
     policies.forEach(function(policy){
       conn.query("SELECT COUNT(eID) AS emps FROM ack_policy WHERE (policyID=?) AND (deleted=0);", [policy.policyID], function(error, results){
@@ -215,6 +218,9 @@ AckPolicy.getAckNeeded = function(policies, conn){
 
 AckPolicy.getAckCompleted = function(policies, conn){
   return new Promise((resolve, reject) => {
+    if(policies.length == 0){
+      resolve([]); 
+    }
     var count = 0; 
     policies.forEach(function(policy){
       conn.query("SELECT COUNT(eID) AS acks FROM ack_policy WHERE (policyID=?) AND (ack=1) AND (deleted=0);", [policy.policyID], function(error, results){
