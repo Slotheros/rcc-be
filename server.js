@@ -35,7 +35,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Allows for Cross-Origin Resource Sharing
 app.use(cors({
-  origin: ['http://localhost:4200'], 
+  origin: ['http://localhost:4200', 'http://localhost'], 
   credentials: true})); 
 
 //Check that the user is authenticated
