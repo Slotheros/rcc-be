@@ -88,7 +88,7 @@ AckSurvey.createForEmployee = function(surveyIds, eId, conn){
 
 AckSurvey.deleteAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
-    conn.query("UPDATE ack_survey deleted=1 WHERE (eID = ?);", [eId], function(error, results){
+    conn.query("UPDATE ack_survey SET deleted=1 WHERE (eID = ?);", [eId], function(error, results){
       if(error) {
         error.errMsg = "There was an error deleting surveys the database. Please try again.";
         reject(error); 

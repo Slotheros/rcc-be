@@ -260,24 +260,11 @@ router.post('/setActive', function(req, res){
     }
     conn.beginTransaction(); 
     
-    var policyIds = [];
-    var surveyIds = []; 
     //set employee status to active(1)
     var promise = User.setStatus(eId, 1, conn).then(success => {
-      // get policy ids relevant to this employee
-      return Policy.getPolicyIdsByDept(deptId, conn);
-    }); 
-      
-    promise = promise.then(success => {
-      policyIds = success; 
-      //get survey ids relevant to this employee
-      return Survey.getSurveyIdsByDept(deptId, conn); 
-    });
-    
-    promise = promise.then(success => {
-      surveyIds = success; 
-      return Promise.all([AckPolicy.createForEmployee(policyIds, eId, conn), 
-        AckSurvey.createForEmployee(surveyIds, eId, conn)]);
+      //restore all acks for this employee
+      return Promise.all([AckPolicy.restoreAllForEmployee(eId, conn), 
+        AckSurvey.restoreAllForEmployee(eId, conn)]);
     });
 
     promise.then(success => {
@@ -392,5 +379,52 @@ router.post('/setDepartment', function(req, res){
     });
   });
 });
+
+/**
+ * Allows the user to edit their personal information.
+ */
+router.post('/editUser', function(req, res){
+  var eId = req.body.eId; 
+  var fName = req.body.fName ? req.body.fName : null; 
+  var lName = req.body.lName ? req.body.lName : null; 
+  var email = req.body.email ? req.body.email : null; 
+  var phone = req.body.phoneNum ? req.body.phoneNum : null; 
+
+  if(fName === null && lName === null && email === null && phone === null){
+    return res.send({msg: "Nothing needs to be updated"}); 
+  }
+
+  User.updateNonCrit(eId, fName, lName, email, phoneNum).then(success => {
+    res.send(success); 
+  }, error => {
+    res.status(500).send(error); 
+  });
+});
+
+// router.post('resetPassword', function(req, res){
+//   var eId = req.body.eId ? req.body.eId : null; 
+//   var password = req.body.password ? req.body.password : null; 
+//   var email = req.body.email ? req.body.email : null; 
+
+//   //user has forgotten password and is requesting a new one
+//   if((email != null) && (eId == null) && (password == null)){
+//     User.resetPasswordWithEmail(email).then(success => {
+//       res.send(success); 
+//     }, error => {
+//       res.status(500).send(error); 
+//     }); 
+//   }
+//   //user resets password on the user settings page
+//   else if((eId != null) && (password !== null)){
+//     User.resetPassword(eId, password).then(success => {
+//       res.send(success); 
+//     }, error => {
+//       res.status(500).send(error); 
+//     }); 
+//   }
+//   else{
+//     res.status(500).send({errMsg: "Invalid post parameters"});
+//   }
+// });
 
 module.exports = router;

@@ -88,7 +88,7 @@ Policy.update = function(policyId, title, description, url, depts, conn) {
       query = addToQuery(deptParams[4].relevant, "deptProduction", query, params); 
     }
     query = query.slice(0, query.length-1); 
-    query += " WHERE (policyId = ?);";
+    query += " WHERE (policyID = ?);";
     params.push(policyId); 
 
     //query the database

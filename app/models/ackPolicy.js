@@ -88,9 +88,21 @@ AckPolicy.createForEmployee = function(policyIds, eId, conn){
 
 AckPolicy.deleteAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
-    conn.query("UPDATE ack_policy deleted=1 WHERE (eID = ?);", [eId], function(error, results){
+    conn.query("UPDATE ack_policy SET deleted=1 WHERE (eID = ?);", [eId], function(error, results){
       if(error) {
         error.errMsg = "There was an error deleting policies the database. Please try again.";
+        reject(error); 
+      } 
+      resolve(results); 
+    });
+  });
+}
+
+AckPolicy.restoreAllForEmployee = function(eId, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE ack_policy SET deleted=0 WHERE (eID = ?);", [eId], function(error, results){
+      if(error) {
+        error.errMsg = "There was an error restoring policies the database. Please try again.";
         reject(error); 
       } 
       resolve(results); 

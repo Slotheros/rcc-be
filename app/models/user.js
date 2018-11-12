@@ -1,5 +1,6 @@
 const db = require('../utilities/db');
 const bcrypt = require('bcrypt-nodejs'); 
+const pwdGen = require('generate-password'); 
 
 function User(eId, fname, lname, email, phone, department, usertype, password){
   this.eId = eId; 
@@ -338,6 +339,67 @@ User.setDept = function(eId, deptId, conn){
     })
   });
 }
+
+User.updateNonCrit = function(eId, fName, lName, email, phoneNum){
+  return new Promise((resolve, reject) => {
+    //generate the query based on which values are not null
+    var query = "UPDATE employee SET ";
+    var params = []; 
+    query = addToQuery(fName, "fname", query, params); 
+    query = addToQuery(lName, "lname", query, params); 
+    query = addToQuery(email, "email", query, params); 
+    query = addToQuery(phoneNum, "phone", query, params); 
+    query = query.slice(0, query.length-1); 
+    query += " WHERE (eID = ?);";
+    params.push(eId); 
+
+    db.query(query, params, function(error, results){
+      if(error){
+        error.errMsg = "Error occurred in User.updateNonCrit"; 
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  });
+}
+
+/**
+ * Helper function that adds to a query.
+ * @param {*} param - param that is being added to the query
+ * @param {*} strAdd - the string representation of the param
+ * @param {*} query - existing query
+ * @param {*} params - List of params that will be inserting into the query at runtime
+ */
+function addToQuery(param, strAdd, query, params){
+  if(param !== null){
+    query += strAdd + " = ?,"; 
+    params.push(param); 
+  }
+  return query; 
+}
+
+// User.resetPasssword = function(eId, password){
+//   return new Promise((resolve, reject) => {
+//     var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8));
+//     db.query('UPDATE employee SET password=? WHERE (eID=?);', [hash, eId], function(error, results){
+//       if(error){
+//         error.errMsg = "Error occurred in User.resetPassword";
+//         reject(error); 
+//       }
+//       resolve(results); 
+//     });
+//   });
+// }
+
+// User.resetPasswordWithEmail = function(email){
+//   return new Promise((resolve, reject) => {
+//     var password = pwdGen.generate({
+//       length: 16, 
+//       numbers: true, 
+//       symbols: true
+//     });
+//   });
+// }
 
 /**
  * Returns an object that contains all of the information in a User object sans password.
