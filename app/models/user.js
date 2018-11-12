@@ -42,6 +42,50 @@ User.create = function(user, conn){
 }
 
 /**
+ * Gets a list of all active users that are in the specified departments and are active employees. 
+ * @param {*} departments 
+ */
+User.findAllActiveInDepts = function(departments, conn){
+  return new Promise((resolve, reject) => {
+    //if the depts is an empty array
+    if(departments.length == 0){
+      resolve([]); 
+    }
+
+    //generate array of department ids
+    var params = []; 
+    var where = "("; 
+    for(dept in departments){
+      where += "?,"; 
+      params.push(departments[dept].id); 
+    }
+    where = where.slice(0, where.length-1) + ")"; 
+
+    //status value
+    params.push(1); 
+    conn.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
+      "role.usertypeID, role.usertype, emp.status FROM employee AS emp JOIN " + 
+      "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
+      "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE " + 
+      "(dept.departmentID IN " + where + ") " +
+      "AND (emp.status = ?);", params, function(error, results, fields){
+      if(error){
+        error.errMsg = "Can't get list of users in this department"; 
+        reject(error); 
+      }
+      var users = []; 
+      for(r in results){
+        var temp = results[r]; 
+        users.push({eId: temp.eID, fname: temp.fname, lname: temp.lname, email: temp.email, phone: temp.phone, 
+          department: {id: temp.departmentID, name: temp.department}, 
+          usertype: {id: temp.usertypeID, name: temp.usertype}}); 
+      }
+      resolve(users); 
+    });
+  });
+}
+
+/**
  * Gets a list of all users that are in the specified departments and are active employees. 
  * @param {*} departments 
  */
@@ -64,11 +108,10 @@ User.findAllInDepts = function(departments, conn){
     //status value
     params.push(1); 
     conn.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
-      "role.usertypeID, role.usertype FROM employee AS emp JOIN " + 
+      "role.usertypeID, role.usertype, emp.status FROM employee AS emp JOIN " + 
       "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
       "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE " + 
-      "(dept.departmentID IN " + where + ") " +
-      "AND (emp.status = ?);", params, function(error, results, fields){
+      "(dept.departmentID IN " + where + ");", params, function(error, results, fields){
       if(error){
         error.errMsg = "Can't get list of users in this department"; 
         reject(error); 
