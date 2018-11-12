@@ -98,6 +98,18 @@ AckSurvey.deleteAllForEmployee = function(eId, conn){
   });
 }
 
+AckSurvey.restoreAllForEmployee = function(eId, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE ack_survey SET deleted=0 WHERE (eID = ?);", [eId], function(error, results){
+      if(error) {
+        error.errMsg = "There was an error deleting surveys the database. Please try again.";
+        reject(error); 
+      } 
+      resolve(results); 
+    });
+  });
+}
+
 AckSurvey.unackSurvey = function(surveyId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_survey SET ack=0 WHERE (surveyID = ?);", [surveyId], function(error, results) {
