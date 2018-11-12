@@ -382,7 +382,7 @@ function addToQuery(param, strAdd, query, params){
   return query; 
 }
 
-User.resetPasssword = function(eId, password){
+User.resetPassword = function(eId, password){
   return new Promise((resolve, reject) => {
     var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8));
     db.query('UPDATE employee SET password=? WHERE (eID=?);', [hash, eId], function(error, results){
