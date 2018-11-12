@@ -238,14 +238,109 @@ router.post('/acknowledge', function(req, res) {
 });
 
 /**
- * Allows admin to get all surveys for all departments. 
+ * Allows admin to get all surveys for all departments. Attaches a list of 
+ * employees that haven't acknowledged the survey to each survey object.
  */
 router.get('/getAll', function(req, res) {
-  Survey.getAllSurveys().then(success => {
-    return res.send(success); 
-  }, error => {
-    return res.status(500).send(error); 
-  });
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+
+    var promise = Survey.getAllSurveys(conn).then(success => {
+      return AckSurvey.getAckNeeded(success, conn);
+    });
+
+    promise = promise.then(success=> {
+      return AckSurvey.getAckCompleted(success, conn); 
+    });
+
+    promise = promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  }); 
+});
+
+/**
+ * Allows a dept head to get all surveys pertaining to their department. 
+ * Attaches a list of employees that haven't acknowledged the survey to each survey object.
+ */
+router.get('/getAllForDept/:deptId', function(req, res) {
+  var deptId = Number.parseInt(req.params.deptId);
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+
+    var promise = Survey.getSurveyIdsByDept(deptId, conn).then(success => {
+      var surveyIds = [];
+      success.forEach(function(survey) {
+        surveyIds.push(survey.surveyID); 
+      })
+      return Survey.getSurveysByIds(surveyIds, conn); 
+    });
+
+    promise = promise.then(success=> {
+      return AckSurvey.getAckNeeded(success, conn);
+    })
+
+    promise = promise.then(success=> {
+      return AckSurvey.getAckCompleted(success, conn); 
+    });
+
+    promise = promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  }); 
+});
+
+/**
+ * Returns a list of all employees that haven't acknowledged a survey.
+ */
+router.get('/getUnackEmployees/:surveyId', function(req, res) {
+  var surveyId = req.params.surveyId; 
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+
+    var promise = AckSurvey.getUnackEmployees(surveyId, conn).then(success => {
+      return User.getEmployeesByIds(success, conn); 
+    });
+
+    promise = promise.then(success=> {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.send(error); 
+    });
+  })
 });
 
 module.exports = router; 

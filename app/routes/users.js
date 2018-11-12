@@ -35,7 +35,10 @@ const parser = require('csv-parser');
  * Returns all users from the DB
  */
 router.get('/getUsers', function(req, res) {
-  db.query('SELECT * FROM employee', [], function(error, results, fields){
+  db.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
+  "role.usertypeID, role.usertype, emp.status FROM employee AS emp JOIN " + 
+  "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
+  "usertype AS role ON (emp.usertypeID = role.usertypeID);", [], function(error, results, fields){
     if(error){
       error.errMsg = "Can't list of users"; 
       return res.status(404).send(error);
@@ -44,7 +47,9 @@ router.get('/getUsers', function(req, res) {
   });
 });
 
-
+/**
+ * Gets the phone numbers of all active users in the given departments. 
+ */
 router.post('/getPhoneNumbersByDepts', function(req, res) {
   var depts = req.body;
   User.findPhonesInDepts(depts).then(success => {
@@ -54,7 +59,29 @@ router.post('/getPhoneNumbersByDepts', function(req, res) {
   }); 
 })
 
+/**
+ * Gets all active users present in the following departments. 
+ */
+router.post('/getActiveUsersByDepts', function(req, res) {
+  var depts = req.body.departments;
+  
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(400).send({errMsg: "Unable to establish connection to the database"});
+    }
+    User.findAllActiveInDepts(depts, conn).then(success => {
+      conn.release(); 
+      return res.send(success); 
+    }, error => {
+      conn.release(); 
+      return res.status(403).send(error); 
+    }); 
+  });
+});
 
+/**
+ * Gets all users present in the following departments. 
+ */
 router.post('/getUsersByDepts', function(req, res) {
   var depts = req.body.departments;
   
@@ -189,6 +216,9 @@ router.post('/csvCompare', function(req, res){
   }); 
 }); 
 
+/**
+ * Compares the employees listed in the CSV with those present in our database. 
+ */
 function csvComparison(res, csvData, emails, phones) {
   db.getConnection((err, conn) => {
     if(err){
