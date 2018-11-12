@@ -62,27 +62,39 @@ AckSurvey.createForEmployee = function(surveyIds, eId, conn){
   });
 }
 
-AckSurvey.deleteForEmployee = function(surveyIds, eId, conn){
+// AckSurvey.deleteForEmployee = function(surveyIds, eId, conn){
+//   return new Promise((resolve, reject) => {
+//     //if there are no surveys
+//     if(surveyIds.length == 0){
+//       resolve({success: "Successfully deleted acknowledgements for employee for all relevant surveys."}); 
+//     }
+//     var count = 0; 
+//     for(i in surveyIds) {
+//       conn.query("UPDATE ack_survey deleted=1 WHERE (eID = ?) AND (surveyID = ?);", [eId, surveyIds[i].surveyID], function(error, results){
+//         count++; 
+//         if(error) {
+//           error.errMsg = "There was an error inserting this record into the database. Please try again.";
+//           reject(error); 
+//         } else{
+//           //reaches end of list so it resolved successfully
+//           if(count == surveyIds.length){
+//             resolve({success: "Successfully deleted acknowledgements for employee for all relevant surveys."}); 
+//           }
+//         }
+//       });
+//     }
+//   });
+// }
+
+AckSurvey.deleteAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
-    //if there are no surveys
-    if(surveyIds.length == 0){
-      resolve({success: "Successfully deleted acknowledgements for employee for all relevant surveys."}); 
-    }
-    var count = 0; 
-    for(i in surveyIds) {
-      conn.query("UPDATE ack_survey deleted=1 WHERE (eID = ?) AND (surveyID = ?);", [eId, surveyIds[i]].surveyID, function(error, results){
-        count++; 
-        if(error) {
-          error.errMsg = "There was an error inserting this record into the database. Please try again.";
-          reject(error); 
-        } else{
-          //reaches end of list so it resolved successfully
-          if(count == surveyIds.length){
-            resolve({success: "Successfully deleted acknowledgements for employee for all relevant surveys."}); 
-          }
-        }
-      });
-    }
+    conn.query("UPDATE ack_survey deleted=1 WHERE (eID = ?);", [eId], function(error, results){
+      if(error) {
+        error.errMsg = "There was an error deleting surveys the database. Please try again.";
+        reject(error); 
+      } 
+      resolve(results); 
+    });
   });
 }
 

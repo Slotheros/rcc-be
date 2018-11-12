@@ -252,7 +252,7 @@ function csvComparison(res, csvData, emails, phones) {
 
 router.post('/setActive', function(req, res){
   var eId = req.body.eId; 
-  var deptId = req.body.departmentId; 
+  var deptId = req.body.deptId; 
 
   db.getConnection((err, conn) => {
     if(err){
@@ -265,7 +265,8 @@ router.post('/setActive', function(req, res){
     //set employee status to active(1)
     var promise = User.setStatus(eId, 1, conn).then(success => {
       // get policy ids relevant to this employee
-      return Policy.getPolicyIdsByDept(deptId, conn).then(success => {
+      return Policy.getPolicyIdsByDept(deptId, conn);
+    }); 
       
     promise = promise.then(success => {
       policyIds = success; 
@@ -295,7 +296,6 @@ router.post('/setActive', function(req, res){
 
 router.post('/setInactive', function(req, res){
   var eId = req.body.eId; 
-  var deptId = req.body.departmentId; 
 
   db.getConnection((err, conn) => {
     if(err){
@@ -303,23 +303,11 @@ router.post('/setInactive', function(req, res){
     }
     conn.beginTransaction(); 
     
-    var policyIds = [];
-    var surveyIds = []; 
     //set employee status to inactive(0)
     var promise = User.setStatus(eId, 0, conn).then(success => {
-      // get policy ids relevant to this employee
-      return Policy.getPolicyIdsByDept(deptId, conn).then(success => {
-      
-    promise = promise.then(success => {
-      policyIds = success; 
-      //get survey ids relevant to this employee
-      return Survey.getSurveyIdsByDept(deptId, conn); 
-    });
-    
-    promise = promise.then(success => {
-      surveyIds = success; 
-      return Promise.all([AckPolicy.deleteForEmployee(policyIds, eId, conn), 
-        AckSurvey.deleteForEmployee(surveyIds, eId, conn)]);
+      //soft delete all policy and survey acks for the employee
+      return Promise.all([AckPolicy.deleteAllForEmployee(eId, conn), 
+        AckSurvey.deleteAllForEmployee(eId, conn)]);
     });
 
     promise.then(success => {
@@ -336,12 +324,73 @@ router.post('/setInactive', function(req, res){
   });
 });
 
-router.post('/editUser', function(req, res){
+/**
+ * Allows the admin to change an employees' usertype.
+ */
+router.post('/setUsertype', function(req, res){
+  var eId = req.body.eId; 
+  var usertypeId = req.body.usertypeId; 
 
+  db.query('UPDATE employee SET usertypeID = ? WHERE (eId = ?)', [usertypeId, eId], function(error, results){
+    if(error){
+      error.errMsg = "Unable to set the employee's usertype"; 
+      return res.status(500).send(error); 
+    }
+
+    return res.send(results); 
+  });
 });
 
-router.post('/resetPassword', function(req, res){
+/**
+ * Allows the admin to change an employees' department.
+ */
+router.post('/setDepartment', function(req, res){
+  var eId = req.body.eId; 
+  var deptId = req.body.deptId; 
 
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    //set employee's dept to the new dept
+    var policyIds = [];
+    var surveyIds = [];
+    var promise = User.setDept(eId, deptId, conn).then(success => {
+      //soft deletes all existing acks for the employee
+      return Promise.all([AckPolicy.deleteAllForEmployee(eId, conn),
+        AckSurvey.deleteAllForEmployee(eId, conn)]); 
+    });
+
+    promise = promise.then(success => {
+      // get policy ids relevant to this employee
+      return Policy.getPolicyIdsByDept(deptId, conn);
+    }); 
+      
+    promise = promise.then(success => {
+      policyIds = success; 
+      //get survey ids relevant to this employee
+      return Survey.getSurveyIdsByDept(deptId, conn); 
+    });
+
+    promise =promise.then(success => {
+      //generate the new acks for the employee
+      return Promise.all([AckPolicy.createForEmployee(policyIds, eId, conn), 
+        AckSurvey.createForEmployee(surveyIds, eId, conn)]);
+    });
+
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
 });
 
 module.exports = router;

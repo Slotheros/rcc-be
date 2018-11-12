@@ -62,27 +62,39 @@ AckPolicy.createForEmployee = function(policyIds, eId, conn){
   });
 }
 
-AckPolicy.deleteForEmployee = function(policyIds, eId, conn){
+// AckPolicy.deleteForEmployee = function(policyIds, eId, conn){
+//   return new Promise((resolve, reject) => {
+//     //if there are no policies
+//     if(policyIds.length == 0){
+//       resolve({success: "Successfully deleted acknowledgements for employee for all relevant policies."}); 
+//     }
+//     var count = 0; 
+//     for(i in policyIds) {
+//       conn.query("UPDATE ack_policy deleted=1 WHERE (eID = ?) AND (policyID = ?);", [eId, policyIds[i].policyID], function(error, results){
+//         count++; 
+//         if(error) {
+//           error.errMsg = "There was an error inserting this record into the database. Please try again.";
+//           reject(error); 
+//         } else{
+//           //reaches end of list so it resolved successfully
+//           if(count == policyIds.length){
+//             resolve({success: "Successfully deleted acknowledgements for employee for all relevant policies."}); 
+//           }
+//         }
+//       });
+//     }
+//   });
+// }
+
+AckPolicy.deleteAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
-    //if there are no policies
-    if(policyIds.length == 0){
-      resolve({success: "Successfully deleted acknowledgements for employee for all relevant policies."}); 
-    }
-    var count = 0; 
-    for(i in policyIds) {
-      conn.query("UPDATE ack_policy deleted=1 WHERE (eID = ?) AND (policyID = ?);", [eId, policyIds[i]].policyID, function(error, results){
-        count++; 
-        if(error) {
-          error.errMsg = "There was an error inserting this record into the database. Please try again.";
-          reject(error); 
-        } else{
-          //reaches end of list so it resolved successfully
-          if(count == policyIds.length){
-            resolve({success: "Successfully deleted acknowledgements for employee for all relevant policies."}); 
-          }
-        }
-      });
-    }
+    conn.query("UPDATE ack_policy deleted=1 WHERE (eID = ?);", [eId], function(error, results){
+      if(error) {
+        error.errMsg = "There was an error deleting policies the database. Please try again.";
+        reject(error); 
+      } 
+      resolve(results); 
+    });
   });
 }
 

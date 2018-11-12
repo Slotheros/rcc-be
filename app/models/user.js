@@ -319,7 +319,19 @@ User.setStatus = function(eId, status, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE employee SET status=? WHERE (eID = ?);", [status, eId], function(error, results) {
       if(error){
-        error.errMsg = "Error occurred in User.setActive"; 
+        error.errMsg = "Error occurred in User.setStatus"; 
+        reject(error); 
+      }
+      resolve(results); 
+    })
+  });
+}
+
+User.setDept = function(eId, deptId, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE employee SET departmentID=? WHERE (eID = ?);", [deptId, eId], function(error, results) {
+      if(error){
+        error.errMsg = "Error occurred in User.setDept"; 
         reject(error); 
       }
       resolve(results); 
