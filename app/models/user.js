@@ -175,7 +175,7 @@ User.findOneForLogin = function(user, callback){
       role.usertypeID, role.usertype, emp.password FROM employee AS emp JOIN 
       department AS dept ON (emp.departmentID = dept.departmentID) JOIN 
       usertype AS role ON (emp.usertypeID = role.usertypeID)
-      WHERE(email = ?) AND (status= ?);`, [user.email, 1], function(error, results, fields){
+      WHERE (email = ?) AND (status= ?);`, [user.email, 1], function(error, results, fields){
       if(error){
         reject(error); 
       }
@@ -197,6 +197,21 @@ User.findOneForLogin = function(user, callback){
     }
   }, err => {
     callback(err, null);
+  });
+}
+
+User.findOne = function(id, conn){
+  return new Promise((resolve, reject) => {
+    conn.query(`SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
+    role.usertypeID, role.usertype, emp.status FROM employee AS emp JOIN 
+    department AS dept ON (emp.departmentID = dept.departmentID) JOIN 
+    usertype AS role ON (emp.usertypeID = role.usertypeID)
+    WHERE (eID = ?);`, [id], function(error, results){
+      if(error){
+        reject(error); 
+      }
+      resolve(results); 
+    });
   });
 }
 
@@ -297,6 +312,18 @@ User.getEmployeesByIds = function(eIds, conn){
       }
       resolve(results); 
     });
+  });
+}
+
+User.setStatus = function(eId, status, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE employee SET status=? WHERE (eID = ?);", [status, eId], function(error, results) {
+      if(error){
+        error.errMsg = "Error occurred in User.setActive"; 
+        reject(error); 
+      }
+      resolve(results); 
+    })
   });
 }
 

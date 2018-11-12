@@ -37,7 +37,7 @@ AckSurvey.newSurvey = function(surveyId, employees, conn){
   });
 }
 
-AckSurvey.newEmployee = function(surveyIds, employee, conn){
+AckSurvey.createForEmployee = function(surveyIds, eId, conn){
   return new Promise((resolve, reject) => {
     //if there are no surveys
     if(surveyIds.length == 0){
@@ -46,7 +46,7 @@ AckSurvey.newEmployee = function(surveyIds, employee, conn){
     var count = 0; 
     for(i in surveyIds) {
       conn.query("INSERT INTO ack_survey(eID, ack, surveyID, deleted) " + 
-      "VALUES(?, ?, ?, ?);", [employee.insertId, 0, surveyIds[i].surveyID, 0], function(error, results){
+      "VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE deleted=0;", [eId, 0, surveyIds[i].surveyID, 0], function(error, results){
         count++; 
         if(error) {
           error.errMsg = "There was an error inserting this record into the database. Please try again.";
@@ -59,7 +59,31 @@ AckSurvey.newEmployee = function(surveyIds, employee, conn){
         }
       });
     }
-  })
+  });
+}
+
+AckSurvey.deleteForEmployee = function(surveyIds, eId, conn){
+  return new Promise((resolve, reject) => {
+    //if there are no surveys
+    if(surveyIds.length == 0){
+      resolve({success: "Successfully deleted acknowledgements for employee for all relevant surveys."}); 
+    }
+    var count = 0; 
+    for(i in surveyIds) {
+      conn.query("UPDATE ack_survey deleted=1 WHERE (eID = ?) AND (surveyID = ?);", [eId, surveyIds[i]].surveyID, function(error, results){
+        count++; 
+        if(error) {
+          error.errMsg = "There was an error inserting this record into the database. Please try again.";
+          reject(error); 
+        } else{
+          //reaches end of list so it resolved successfully
+          if(count == surveyIds.length){
+            resolve({success: "Successfully deleted acknowledgements for employee for all relevant surveys."}); 
+          }
+        }
+      });
+    }
+  });
 }
 
 AckSurvey.unackSurvey = function(surveyId, conn){

@@ -105,7 +105,19 @@ router.post('/getUsersByDepts', function(req, res) {
  * @param id - the user's id in the DB
  */
 router.get('/getUser/:id', function(req, res) {
-  return res.send('Get specified user');
+  var id = req.params.id; 
+
+  db.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
+  "role.usertypeID, role.usertype, emp.status FROM employee AS emp JOIN " + 
+  "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
+  "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE (emp.eID = ?);", [id], 
+  function(error, results, fields){
+    if(error){
+      error.errMsg = "Can't list of users"; 
+      return res.status(404).send(error);
+    }
+    return res.send(results);
+  });
 });
 
 /**
@@ -167,7 +179,8 @@ router.post('/register', function(req, res){
 
     promise = promise.then(success => {
       //create ack_policy entries for new employee
-      return Promise.all([AckPolicy.newEmployee(policyIds, user, conn), AckSurvey.newEmployee(success, user, conn)]);
+      return Promise.all([AckPolicy.createForEmployee(policyIds, user.insertId, conn), 
+        AckSurvey.createForEmployee(success, user.insertId, conn)]);
     });
 
     promise = promise.then(success => {
@@ -236,5 +249,99 @@ function csvComparison(res, csvData, emails, phones) {
     });
   });
 }
+
+router.post('/setActive', function(req, res){
+  var eId = req.body.eId; 
+  var deptId = req.body.departmentId; 
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    
+    var policyIds = [];
+    var surveyIds = []; 
+    //set employee status to active(1)
+    var promise = User.setStatus(eId, 1, conn).then(success => {
+      // get policy ids relevant to this employee
+      return Policy.getPolicyIdsByDept(deptId, conn).then(success => {
+      
+    promise = promise.then(success => {
+      policyIds = success; 
+      //get survey ids relevant to this employee
+      return Survey.getSurveyIdsByDept(deptId, conn); 
+    });
+    
+    promise = promise.then(success => {
+      surveyIds = success; 
+      return Promise.all([AckPolicy.createForEmployee(policyIds, eId, conn), 
+        AckSurvey.createForEmployee(surveyIds, eId, conn)]);
+    });
+
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
+});
+
+router.post('/setInactive', function(req, res){
+  var eId = req.body.eId; 
+  var deptId = req.body.departmentId; 
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    
+    var policyIds = [];
+    var surveyIds = []; 
+    //set employee status to inactive(0)
+    var promise = User.setStatus(eId, 0, conn).then(success => {
+      // get policy ids relevant to this employee
+      return Policy.getPolicyIdsByDept(deptId, conn).then(success => {
+      
+    promise = promise.then(success => {
+      policyIds = success; 
+      //get survey ids relevant to this employee
+      return Survey.getSurveyIdsByDept(deptId, conn); 
+    });
+    
+    promise = promise.then(success => {
+      surveyIds = success; 
+      return Promise.all([AckPolicy.deleteForEmployee(policyIds, eId, conn), 
+        AckSurvey.deleteForEmployee(surveyIds, eId, conn)]);
+    });
+
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
+});
+
+router.post('/editUser', function(req, res){
+
+});
+
+router.post('/resetPassword', function(req, res){
+
+});
 
 module.exports = router;
