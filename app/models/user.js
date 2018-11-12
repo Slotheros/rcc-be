@@ -1,6 +1,10 @@
 const db = require('../utilities/db');
 const bcrypt = require('bcrypt-nodejs'); 
 const pwdGen = require('generate-password'); 
+'use strict';
+const nodemailer = require('nodemailer');
+const { google } = require("googleapis");
+const OAuth2 = google.auth.OAuth2;
 
 function User(eId, fname, lname, email, phone, department, usertype, password){
   this.eId = eId; 
@@ -378,28 +382,73 @@ function addToQuery(param, strAdd, query, params){
   return query; 
 }
 
-// User.resetPasssword = function(eId, password){
-//   return new Promise((resolve, reject) => {
-//     var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8));
-//     db.query('UPDATE employee SET password=? WHERE (eID=?);', [hash, eId], function(error, results){
-//       if(error){
-//         error.errMsg = "Error occurred in User.resetPassword";
-//         reject(error); 
-//       }
-//       resolve(results); 
-//     });
-//   });
-// }
+User.resetPasssword = function(eId, password){
+  return new Promise((resolve, reject) => {
+    var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8));
+    db.query('UPDATE employee SET password=? WHERE (eID=?);', [hash, eId], function(error, results){
+      if(error){
+        error.errMsg = "Error occurred in User.resetPassword";
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  });
+}
 
-// User.resetPasswordWithEmail = function(email){
-//   return new Promise((resolve, reject) => {
-//     var password = pwdGen.generate({
-//       length: 16, 
-//       numbers: true, 
-//       symbols: true
-//     });
-//   });
-// }
+User.resetPasswordWithEmail = function(email, conn){
+  return new Promise((resolve, reject) => {
+    var password = pwdGen.generate({
+      length: 16, 
+      numbers: true, 
+      symbols: true
+    });
+    var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8)); 
+    db.query('UPDATE employee SET password=? WHERE (email=?);', [hash, email], function(error, results){
+      if(error){
+        error.errMsg = "Error occurred in User.resetPassword";
+        reject(error); 
+      }
+      //send the email
+      const oauth2Client = new OAuth2(
+        "130825136877-4liulsnpqe55ku7jqldcmvhf8fhjtj64.apps.googleusercontent.com", // ClientID
+        "nORPDE6M-D0SvqZAScZtOm_A", // Client Secret
+        "https://developers.google.com/oauthplayground" // Redirect URL
+      );
+        
+      oauth2Client.setCredentials({
+        refresh_token: "1/LPNp0BaoRiGksk7v8r84Ne7b0AK1iDfRYkPMw2U83-Y"
+      });
+    
+      const smtpTransport = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          type: "OAuth2",
+          user: "teamgarnetgroup@gmail.com", 
+          clientId: "130825136877-4liulsnpqe55ku7jqldcmvhf8fhjtj64.apps.googleusercontent.com",
+          clientSecret: "nORPDE6M-D0SvqZAScZtOm_A",
+          refreshToken: "1/LPNp0BaoRiGksk7v8r84Ne7b0AK1iDfRYkPMw2U83-Y"    
+        }
+      });
+    
+      const mailOptions = {
+        from: "teamgarnetgroup@gmail.com",
+        to: email,
+        subject: "HR Portal: Password Reset",
+        generateTextFromHTML: true,
+        text: "New Password: " + password + "\n\nDO NOT REPLY TO THIS EMAIL"
+      };
+    
+      smtpTransport.sendMail(mailOptions, (error, response) => {
+        smtpTransport.close(); 
+        if(error){
+          error.errMsg = "Error occurred sending an email to HR"; 
+          reject(error);
+        }
+        resolve(results); 
+      });
+    });
+  });
+}
 
 /**
  * Returns an object that contains all of the information in a User object sans password.

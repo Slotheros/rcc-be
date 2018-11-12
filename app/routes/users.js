@@ -401,30 +401,30 @@ router.post('/editUser', function(req, res){
   });
 });
 
-// router.post('resetPassword', function(req, res){
-//   var eId = req.body.eId ? req.body.eId : null; 
-//   var password = req.body.password ? req.body.password : null; 
-//   var email = req.body.email ? req.body.email : null; 
+router.post('/resetPassword', function(req, res){
+  var eId = req.body.eId ? req.body.eId : null; 
+  var password = req.body.password ? req.body.password : null; 
+  var email = req.body.email ? req.body.email : null; 
 
-//   //user has forgotten password and is requesting a new one
-//   if((email != null) && (eId == null) && (password == null)){
-//     User.resetPasswordWithEmail(email).then(success => {
-//       res.send(success); 
-//     }, error => {
-//       res.status(500).send(error); 
-//     }); 
-//   }
-//   //user resets password on the user settings page
-//   else if((eId != null) && (password !== null)){
-//     User.resetPassword(eId, password).then(success => {
-//       res.send(success); 
-//     }, error => {
-//       res.status(500).send(error); 
-//     }); 
-//   }
-//   else{
-//     res.status(500).send({errMsg: "Invalid post parameters"});
-//   }
-// });
+  //user has forgotten password and is requesting a new one
+  if((email != null) && (eId == null) && (password == null)){
+    User.resetPasswordWithEmail(email).then(success => {
+      res.send(success); 
+    }, error => {
+      res.status(500).send(error); 
+    }); 
+  }
+  //user resets password on the user settings page
+  else if((eId != null) && (password !== null)){
+    User.resetPassword(eId, password).then(success => {
+      res.send(success); 
+    }, error => {
+      res.status(500).send(error); 
+    }); 
+  }
+  else{
+    res.status(500).send({errMsg: "Invalid post parameters"});
+  }
+});
 
 module.exports = router;
