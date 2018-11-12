@@ -394,7 +394,7 @@ router.post('/editUser', function(req, res){
     return res.send({msg: "Nothing needs to be updated"}); 
   }
 
-  User.updateNonCrit(eId, fName, lName, email, phoneNum).then(success => {
+  User.updateNonCrit(eId, fName, lName, email, phone).then(success => {
     res.send(success); 
   }, error => {
     res.status(500).send(error); 
