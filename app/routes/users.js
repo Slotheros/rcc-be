@@ -388,7 +388,7 @@ router.post('/editUser', function(req, res){
   var fName = req.body.fName ? req.body.fName : null; 
   var lName = req.body.lName ? req.body.lName : null; 
   var email = req.body.email ? req.body.email : null; 
-  var phone = req.body.phoneNum ? req.body.phoneNum : null; 
+  var phone = req.body.phone ? req.body.phone : null; 
 
   if(fName === null && lName === null && email === null && phone === null){
     return res.send({msg: "Nothing needs to be updated"}); 
