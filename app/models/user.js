@@ -400,7 +400,8 @@ User.resetPasswordWithEmail = function(email, conn){
     var password = pwdGen.generate({
       length: 16, 
       numbers: true, 
-      symbols: true
+      symbols: true, 
+      strict: true
     });
     var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8)); 
     db.query('UPDATE employee SET password=? WHERE (email=?);', [hash, email], function(error, results){
