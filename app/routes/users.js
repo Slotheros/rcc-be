@@ -105,7 +105,19 @@ router.post('/getUsersByDepts', function(req, res) {
  * @param id - the user's id in the DB
  */
 router.get('/getUser/:id', function(req, res) {
-  return res.send('Get specified user');
+  var id = req.params.id; 
+
+  db.query("SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, " +  
+  "role.usertypeID, role.usertype, emp.status FROM employee AS emp JOIN " + 
+  "department AS dept ON (emp.departmentID = dept.departmentID) JOIN " + 
+  "usertype AS role ON (emp.usertypeID = role.usertypeID) WHERE (emp.eID = ?);", [id], 
+  function(error, results, fields){
+    if(error){
+      error.errMsg = "Can't list of users"; 
+      return res.status(404).send(error);
+    }
+    return res.send(results);
+  });
 });
 
 /**
@@ -167,7 +179,8 @@ router.post('/register', function(req, res){
 
     promise = promise.then(success => {
       //create ack_policy entries for new employee
-      return Promise.all([AckPolicy.newEmployee(policyIds, user, conn), AckSurvey.newEmployee(success, user, conn)]);
+      return Promise.all([AckPolicy.createForEmployee(policyIds, user.insertId, conn), 
+        AckSurvey.createForEmployee(success, user.insertId, conn)]);
     });
 
     promise = promise.then(success => {
@@ -236,5 +249,182 @@ function csvComparison(res, csvData, emails, phones) {
     });
   });
 }
+
+router.post('/setActive', function(req, res){
+  var eId = req.body.eId; 
+  var deptId = req.body.deptId; 
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    
+    //set employee status to active(1)
+    var promise = User.setStatus(eId, 1, conn).then(success => {
+      //restore all acks for this employee
+      return Promise.all([AckPolicy.restoreAllForEmployee(eId, conn), 
+        AckSurvey.restoreAllForEmployee(eId, conn)]);
+    });
+
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
+});
+
+router.post('/setInactive', function(req, res){
+  var eId = req.body.eId; 
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    
+    //set employee status to inactive(0)
+    var promise = User.setStatus(eId, 0, conn).then(success => {
+      //soft delete all policy and survey acks for the employee
+      return Promise.all([AckPolicy.deleteAllForEmployee(eId, conn), 
+        AckSurvey.deleteAllForEmployee(eId, conn)]);
+    });
+
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
+});
+
+/**
+ * Allows the admin to change an employees' usertype.
+ */
+router.post('/setUsertype', function(req, res){
+  var eId = req.body.eId; 
+  var usertypeId = req.body.usertypeId; 
+
+  db.query('UPDATE employee SET usertypeID = ? WHERE (eId = ?)', [usertypeId, eId], function(error, results){
+    if(error){
+      error.errMsg = "Unable to set the employee's usertype"; 
+      return res.status(500).send(error); 
+    }
+
+    return res.send(results); 
+  });
+});
+
+/**
+ * Allows the admin to change an employees' department.
+ */
+router.post('/setDepartment', function(req, res){
+  var eId = req.body.eId; 
+  var deptId = req.body.deptId; 
+
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    //set employee's dept to the new dept
+    var policyIds = [];
+    var surveyIds = [];
+    var promise = User.setDept(eId, deptId, conn).then(success => {
+      //soft deletes all existing acks for the employee
+      return Promise.all([AckPolicy.deleteAllForEmployee(eId, conn),
+        AckSurvey.deleteAllForEmployee(eId, conn)]); 
+    });
+
+    promise = promise.then(success => {
+      // get policy ids relevant to this employee
+      return Policy.getPolicyIdsByDept(deptId, conn);
+    }); 
+      
+    promise = promise.then(success => {
+      policyIds = success; 
+      //get survey ids relevant to this employee
+      return Survey.getSurveyIdsByDept(deptId, conn); 
+    });
+
+    promise =promise.then(success => {
+      //generate the new acks for the employee
+      return Promise.all([AckPolicy.createForEmployee(policyIds, eId, conn), 
+        AckSurvey.createForEmployee(surveyIds, eId, conn)]);
+    });
+
+    promise.then(success => {
+      conn.commit(); 
+      conn.release(); 
+      return res.send(success); 
+    });
+
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      return res.status(500).send(error); 
+    });
+  });
+});
+
+/**
+ * Allows the user to edit their personal information.
+ */
+router.post('/editUser', function(req, res){
+  var eId = req.body.eId; 
+  var fName = req.body.fName ? req.body.fName : null; 
+  var lName = req.body.lName ? req.body.lName : null; 
+  var email = req.body.email ? req.body.email : null; 
+  var phone = req.body.phone ? req.body.phone : null; 
+
+  if(fName === null && lName === null && email === null && phone === null){
+    return res.send({msg: "Nothing needs to be updated"}); 
+  }
+
+  User.updateNonCrit(eId, fName, lName, email, phone).then(success => {
+    res.send(success); 
+  }, error => {
+    res.status(500).send(error); 
+  });
+});
+
+router.post('/resetPassword', function(req, res){
+  var eId = req.body.eId ? req.body.eId : null; 
+  var password = req.body.password ? req.body.password : null; 
+  var email = req.body.email ? req.body.email : null; 
+
+  //user has forgotten password and is requesting a new one
+  if((email != null) && (eId == null) && (password == null)){
+    User.resetPasswordWithEmail(email).then(success => {
+      res.send(success); 
+    }, error => {
+      res.status(500).send(error); 
+    }); 
+  }
+  //user resets password on the user settings page
+  else if((eId != null) && (password !== null)){
+    User.resetPassword(eId, password).then(success => {
+      res.send(success); 
+    }, error => {
+      res.status(500).send(error); 
+    }); 
+  }
+  else{
+    res.status(500).send({errMsg: "Invalid post parameters"});
+  }
+});
 
 module.exports = router;

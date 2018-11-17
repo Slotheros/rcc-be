@@ -88,7 +88,7 @@ Survey.update = function(surveyId, title, description, url, depts, conn) {
       query = addToQuery(deptParams[4].relevant, "deptProduction", query, params); 
     }
     query = query.slice(0, query.length-1); 
-    query += " WHERE (surveyId = ?);";
+    query += " WHERE (surveyID = ?);";
     params.push(surveyId); 
 
     //query the database

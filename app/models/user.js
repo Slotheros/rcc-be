@@ -1,5 +1,10 @@
 const db = require('../utilities/db');
 const bcrypt = require('bcrypt-nodejs'); 
+const pwdGen = require('generate-password'); 
+'use strict';
+const nodemailer = require('nodemailer');
+const { google } = require("googleapis");
+const OAuth2 = google.auth.OAuth2;
 
 function User(eId, fname, lname, email, phone, department, usertype, password){
   this.eId = eId; 
@@ -175,7 +180,7 @@ User.findOneForLogin = function(user, callback){
       role.usertypeID, role.usertype, emp.password FROM employee AS emp JOIN 
       department AS dept ON (emp.departmentID = dept.departmentID) JOIN 
       usertype AS role ON (emp.usertypeID = role.usertypeID)
-      WHERE(email = ?) AND (status= ?);`, [user.email, 1], function(error, results, fields){
+      WHERE (email = ?) AND (status= ?);`, [user.email, 1], function(error, results, fields){
       if(error){
         reject(error); 
       }
@@ -197,6 +202,21 @@ User.findOneForLogin = function(user, callback){
     }
   }, err => {
     callback(err, null);
+  });
+}
+
+User.findOne = function(id, conn){
+  return new Promise((resolve, reject) => {
+    conn.query(`SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
+    role.usertypeID, role.usertype, emp.status FROM employee AS emp JOIN 
+    department AS dept ON (emp.departmentID = dept.departmentID) JOIN 
+    usertype AS role ON (emp.usertypeID = role.usertypeID)
+    WHERE (eID = ?);`, [id], function(error, results){
+      if(error){
+        reject(error); 
+      }
+      resolve(results); 
+    });
   });
 }
 
@@ -296,6 +316,136 @@ User.getEmployeesByIds = function(eIds, conn){
         reject(error); 
       }
       resolve(results); 
+    });
+  });
+}
+
+User.setStatus = function(eId, status, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE employee SET status=? WHERE (eID = ?);", [status, eId], function(error, results) {
+      if(error){
+        error.errMsg = "Error occurred in User.setStatus"; 
+        reject(error); 
+      }
+      resolve(results); 
+    })
+  });
+}
+
+User.setDept = function(eId, deptId, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE employee SET departmentID=? WHERE (eID = ?);", [deptId, eId], function(error, results) {
+      if(error){
+        error.errMsg = "Error occurred in User.setDept"; 
+        reject(error); 
+      }
+      resolve(results); 
+    })
+  });
+}
+
+User.updateNonCrit = function(eId, fName, lName, email, phoneNum){
+  return new Promise((resolve, reject) => {
+    //generate the query based on which values are not null
+    var query = "UPDATE employee SET ";
+    var params = []; 
+    query = addToQuery(fName, "fname", query, params); 
+    query = addToQuery(lName, "lname", query, params); 
+    query = addToQuery(email, "email", query, params); 
+    query = addToQuery(phoneNum, "phone", query, params); 
+    query = query.slice(0, query.length-1); 
+    query += " WHERE (eID = ?);";
+    params.push(eId); 
+
+    db.query(query, params, function(error, results){
+      if(error){
+        error.errMsg = "Error occurred in User.updateNonCrit"; 
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  });
+}
+
+/**
+ * Helper function that adds to a query.
+ * @param {*} param - param that is being added to the query
+ * @param {*} strAdd - the string representation of the param
+ * @param {*} query - existing query
+ * @param {*} params - List of params that will be inserting into the query at runtime
+ */
+function addToQuery(param, strAdd, query, params){
+  if(param !== null){
+    query += strAdd + " = ?,"; 
+    params.push(param); 
+  }
+  return query; 
+}
+
+User.resetPassword = function(eId, password){
+  return new Promise((resolve, reject) => {
+    var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8));
+    db.query('UPDATE employee SET password=? WHERE (eID=?);', [hash, eId], function(error, results){
+      if(error){
+        error.errMsg = "Error occurred in User.resetPassword";
+        reject(error); 
+      }
+      resolve(results); 
+    });
+  });
+}
+
+User.resetPasswordWithEmail = function(email, conn){
+  return new Promise((resolve, reject) => {
+    var password = pwdGen.generate({
+      length: 16, 
+      numbers: true, 
+      symbols: true
+    });
+    var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8)); 
+    db.query('UPDATE employee SET password=? WHERE (email=?);', [hash, email], function(error, results){
+      if(error){
+        error.errMsg = "Error occurred in User.resetPassword";
+        reject(error); 
+      }
+      //send the email
+      const oauth2Client = new OAuth2(
+        "130825136877-4liulsnpqe55ku7jqldcmvhf8fhjtj64.apps.googleusercontent.com", // ClientID
+        "nORPDE6M-D0SvqZAScZtOm_A", // Client Secret
+        "https://developers.google.com/oauthplayground" // Redirect URL
+      );
+        
+      oauth2Client.setCredentials({
+        refresh_token: "1/LPNp0BaoRiGksk7v8r84Ne7b0AK1iDfRYkPMw2U83-Y"
+      });
+    
+      const smtpTransport = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          type: "OAuth2",
+          user: "teamgarnetgroup@gmail.com", 
+          clientId: "130825136877-4liulsnpqe55ku7jqldcmvhf8fhjtj64.apps.googleusercontent.com",
+          clientSecret: "nORPDE6M-D0SvqZAScZtOm_A",
+          refreshToken: "1/LPNp0BaoRiGksk7v8r84Ne7b0AK1iDfRYkPMw2U83-Y"    
+        }
+      });
+    
+      const mailOptions = {
+        from: "teamgarnetgroup@gmail.com",
+        to: email,
+        subject: "HR Portal: Password Reset",
+        generateTextFromHTML: true,
+        text: "New Password: " + password + "\n\nDO NOT REPLY TO THIS EMAIL"
+      };
+    
+      smtpTransport.sendMail(mailOptions, (error, response) => {
+        smtpTransport.close(); 
+        if(error){
+          error.errMsg = "Error occurred sending an email to HR"; 
+          reject(error);
+        }
+        resolve(results); 
+      });
     });
   });
 }

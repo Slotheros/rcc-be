@@ -37,7 +37,7 @@ AckPolicy.newPolicy = function(policyId, employees, conn){
   });
 }
 
-AckPolicy.newEmployee = function(policyIds, employee, conn){
+AckPolicy.createForEmployee = function(policyIds, eId, conn){
   return new Promise((resolve, reject) => {
     //if there are no policies
     if(policyIds.length == 0){
@@ -46,7 +46,7 @@ AckPolicy.newEmployee = function(policyIds, employee, conn){
     var count = 0; 
     for(i in policyIds) {
       conn.query("INSERT INTO ack_policy(eID, ack, policyID, deleted) " + 
-      "VALUES(?, ?, ?, ?);", [employee.insertId, 0, policyIds[i].policyID, 0], function(error, results){
+      "VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE deleted=0;", [eId, 0, policyIds[i].policyID, 0], function(error, results){
         count++; 
         if(error) {
           error.errMsg = "There was an error inserting this record into the database. Please try again.";
@@ -59,7 +59,55 @@ AckPolicy.newEmployee = function(policyIds, employee, conn){
         }
       });
     }
-  })
+  });
+}
+
+// AckPolicy.deleteForEmployee = function(policyIds, eId, conn){
+//   return new Promise((resolve, reject) => {
+//     //if there are no policies
+//     if(policyIds.length == 0){
+//       resolve({success: "Successfully deleted acknowledgements for employee for all relevant policies."}); 
+//     }
+//     var count = 0; 
+//     for(i in policyIds) {
+//       conn.query("UPDATE ack_policy deleted=1 WHERE (eID = ?) AND (policyID = ?);", [eId, policyIds[i].policyID], function(error, results){
+//         count++; 
+//         if(error) {
+//           error.errMsg = "There was an error inserting this record into the database. Please try again.";
+//           reject(error); 
+//         } else{
+//           //reaches end of list so it resolved successfully
+//           if(count == policyIds.length){
+//             resolve({success: "Successfully deleted acknowledgements for employee for all relevant policies."}); 
+//           }
+//         }
+//       });
+//     }
+//   });
+// }
+
+AckPolicy.deleteAllForEmployee = function(eId, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE ack_policy SET deleted=1 WHERE (eID = ?);", [eId], function(error, results){
+      if(error) {
+        error.errMsg = "There was an error deleting policies the database. Please try again.";
+        reject(error); 
+      } 
+      resolve(results); 
+    });
+  });
+}
+
+AckPolicy.restoreAllForEmployee = function(eId, conn){
+  return new Promise((resolve, reject) => {
+    conn.query("UPDATE ack_policy SET deleted=0 WHERE (eID = ?);", [eId], function(error, results){
+      if(error) {
+        error.errMsg = "There was an error restoring policies the database. Please try again.";
+        reject(error); 
+      } 
+      resolve(results); 
+    });
+  });
 }
 
 AckPolicy.unackPolicy = function(policyId, conn){
