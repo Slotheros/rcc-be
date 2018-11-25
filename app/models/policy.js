@@ -18,7 +18,7 @@ Policy.create = function(title, description, url, depts, conn){
     createDate = createDate.toISOString().slice(0,10); 
 
     conn.query('INSERT INTO policy(title, description, url, date, deptSales, deptGarage, deptAdmin, deptFoodBeverage, ' + 
-    'deptProduction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', [title, description, url, createDate, deptParams[0].relevant, 
+    'deptProduction, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0);', [title, description, url, createDate, deptParams[0].relevant, 
     deptParams[1].relevant, deptParams[2].relevant, deptParams[3].relevant, deptParams[4].relevant], 
     function(error, results){
       if (error) {
