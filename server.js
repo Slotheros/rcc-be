@@ -44,7 +44,7 @@ function ensureAuthenticated(req, res, next) {
   res.status(401).send({errMsg: "Please login first"});
 }
 app.all('*', function(req,res,next){
-  if (req.path === '/users/register' || req.path === '/auth/login' || req.path === '/users/resetPassword')
+  if (req.path === '/users/register' || req.path === '/auth/login' || req.path === '/users/resetPassword' || req.path === '/users/testPopulation')
     next();
   else
     ensureAuthenticated(req,res,next);  

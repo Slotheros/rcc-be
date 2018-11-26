@@ -427,4 +427,97 @@ router.post('/resetPassword', function(req, res){
   }
 });
 
+
+//This endpoint is exclusively for adding users for the purposes of testing.
+router.post('/testPopulation', function(req, res){
+  upload(req, res, function(err) {
+    if (err) {
+      // An error occurred when uploading
+      return res.status(422).send({msg: "An error occured with the CSV upload."})
+    }  
+    // No error occured.
+    var csvData = [];
+    var stream = fs.createReadStream(req.file.path)
+      .pipe(parser({delimiter: ','}))
+      .on('data', function(csvRow){
+        csvRow['phone'] = "+1" + csvRow['phone'].replace(/-/g, '');
+        csvData.push(csvRow); 
+      })
+      .on('end', function(){
+        return csvAddUsers(res, csvData); 
+      });
+  });
+});
+
+//helper function for testPopulation endpoint
+function csvAddUsers(res, csvData) {
+  var count = 0; 
+  db.getConnection((err, conn) => {
+    if(err){
+      return res.status(503).send({errMsg: "Unable to establish connection to the database"});
+    }
+    conn.beginTransaction(); 
+    var promise = Promise.resolve(null); 
+  csvData.forEach(tempUser => {
+    var fname = tempUser['fname']; 
+    var lname = tempUser['lname']; 
+    var email = tempUser['email']; 
+    var phone = tempUser['phone']; 
+    var department = {
+      id: parseInt(tempUser['departmentID']), 
+      name: "temp"
+    }; 
+    var password = "Password1!"; 
+
+    
+      var user = null ;
+      promise = promise.then(success => {
+        return validator.validateRegistrant(fname, lname, email, phone, 
+          department, password);
+      }); 
+      
+      promise = promise.then(success => {
+        user = new User(null, fname, lname, email, phone, department, null, password); 
+        //insert the registrant into the database
+        return User.create(user, conn);
+      });
+
+      promise = promise.then(success => {
+        //save the user info
+        user = success; 
+        //get policies relevant to this employee
+        return Policy.getPolicyIdsByDept(department.id, conn); 
+      });  
+
+      promise = promise.then(success => {
+        //save the policyids 
+        policyIds = success; 
+        //get surveys relevant to this employee
+        return Survey.getSurveyIdsByDept(department.id, conn); 
+      })
+
+      promise = promise.then(success => {
+        //create ack_policy entries for new employee
+        return Promise.all([AckPolicy.createForEmployee(policyIds, user.insertId, conn), 
+          AckSurvey.createForEmployee(success, user.insertId, conn)]);
+      });
+
+      promise = promise.then(success => {
+        count++;
+        if(count == csvData.length){
+          conn.commit(); 
+          conn.release();
+          return res.send("successfully added fake users data"); 
+        }
+      }); 
+    });
+    promise.catch(error => {
+      conn.rollback(); 
+      conn.release(); 
+      console.log(error); 
+      res.status(500).send({errMsg: "Error adding fake data"});
+    });
+  }); 
+}
+
 module.exports = router;

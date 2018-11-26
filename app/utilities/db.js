@@ -1,6 +1,8 @@
 const mysql = require('mysql');
 
-// RIT dev server info
+/**
+ * RIT dev server info
+ */
 // const pool = mysql.createPool({
 //   connectionLimit: 10,
 //   host: '129.21.183.59',
