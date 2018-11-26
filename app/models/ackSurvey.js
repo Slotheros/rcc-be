@@ -37,6 +37,9 @@ AckSurvey.newSurvey = function(surveyId, employees, conn){
   });
 }
 
+/**
+ * Creates surveyAcks for an employee given a list of surveyIds, and the employee's eID.
+ */
 AckSurvey.createForEmployee = function(surveyIds, eId, conn){
   return new Promise((resolve, reject) => {
     //if there are no surveys
@@ -86,6 +89,9 @@ AckSurvey.createForEmployee = function(surveyIds, eId, conn){
 //   });
 // }
 
+/**
+ * Deletes all surveyAcks for the given employee.
+ */
 AckSurvey.deleteAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_survey SET deleted=1 WHERE (eID = ?);", [eId], function(error, results){
@@ -98,6 +104,9 @@ AckSurvey.deleteAllForEmployee = function(eId, conn){
   });
 }
 
+/**
+ * Restores all surveyAcks for the given employee. 
+ */
 AckSurvey.restoreAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_survey SET deleted=0 WHERE (eID = ?);", [eId], function(error, results){
@@ -110,6 +119,9 @@ AckSurvey.restoreAllForEmployee = function(eId, conn){
   });
 }
 
+/**
+ * Unacknowledges a survey for all employees. 
+ */
 AckSurvey.unackSurvey = function(surveyId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_survey SET ack=0 WHERE (surveyID = ?);", [surveyId], function(error, results) {
@@ -242,6 +254,9 @@ AckSurvey.makeDeptsIrrelevant = function(irrelevantDepts, surveyId, conn) {
   });
 }
 
+/**
+ * Gets the number of acknowledgements that are still needed for each survey.
+ */
 AckSurvey.getAckNeeded = function(surveys, conn){
   return new Promise((resolve, reject) => {
     if(surveys.length == 0){
@@ -264,6 +279,9 @@ AckSurvey.getAckNeeded = function(surveys, conn){
   });
 }
 
+/**
+ * Gets the number of employees that have acknowledged the surveys. 
+ */
 AckSurvey.getAckCompleted = function(surveys, conn){
   return new Promise((resolve, reject) => {
     if(surveys.length == 0){
@@ -286,6 +304,9 @@ AckSurvey.getAckCompleted = function(surveys, conn){
   });
 }
 
+/**
+ * Get the list of employees that still need to acknowledge a survey. 
+ */
 AckSurvey.getUnackEmployees = function(surveyId, conn) {
   return new Promise((resolve, reject) => {
     conn.query("SELECT eID from ack_survey WHERE (surveyID = ?) AND (deleted=0) AND (ack=0);", [surveyId], function(error, results){

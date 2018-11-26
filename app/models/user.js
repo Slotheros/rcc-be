@@ -205,6 +205,9 @@ User.findOneForLogin = function(user, callback){
   });
 }
 
+/**
+ * Finds one employee based on their eID.
+ */
 User.findOne = function(id, conn){
   return new Promise((resolve, reject) => {
     conn.query(`SELECT emp.eID, emp.fname, emp.lname, emp.email, emp.phone, dept.departmentID, dept.department, 
@@ -292,6 +295,9 @@ User.findAllNotInCsv = function(emails, phones, conn) {
   });
 }
 
+/**
+ * Gets employees given a list of eIDs.
+ */
 User.getEmployeesByIds = function(eIds, conn){
   return new Promise((resolve, reject) => {
     //if there are no policyIds return an empty array
@@ -320,6 +326,9 @@ User.getEmployeesByIds = function(eIds, conn){
   });
 }
 
+/**
+ * Sets an employee's status to either active(1) or inactive(0).
+ */
 User.setStatus = function(eId, status, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE employee SET status=? WHERE (eID = ?);", [status, eId], function(error, results) {
@@ -332,6 +341,9 @@ User.setStatus = function(eId, status, conn){
   });
 }
 
+/**
+ * Sets the employees departmentID to the given deptId. 
+ */
 User.setDept = function(eId, deptId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE employee SET departmentID=? WHERE (eID = ?);", [deptId, eId], function(error, results) {
@@ -344,6 +356,9 @@ User.setDept = function(eId, deptId, conn){
   });
 }
 
+/**
+ * Updates non-critical employee information such as their name, email, or phone.
+ */
 User.updateNonCrit = function(eId, fName, lName, email, phoneNum){
   return new Promise((resolve, reject) => {
     //generate the query based on which values are not null
@@ -382,6 +397,9 @@ function addToQuery(param, strAdd, query, params){
   return query; 
 }
 
+/**
+ * Resets the employee's password to the new one that they provided. 
+ */
 User.resetPassword = function(eId, password){
   return new Promise((resolve, reject) => {
     var hash = bcrypt.hashSync(password, bcrypt.genSaltSync(8));
@@ -395,6 +413,10 @@ User.resetPassword = function(eId, password){
   });
 }
 
+/**
+ * Resets the employees password to a randomly generated password given an email. Then it will 
+ * send an email to the employee with their new password. 
+ */
 User.resetPasswordWithEmail = function(email, conn){
   return new Promise((resolve, reject) => {
     var password = pwdGen.generate({

@@ -37,6 +37,9 @@ AckPolicy.newPolicy = function(policyId, employees, conn){
   });
 }
 
+/**
+ * Creates policyAcks for an employee given a list of policyIds, and the employee's eID.
+ */
 AckPolicy.createForEmployee = function(policyIds, eId, conn){
   return new Promise((resolve, reject) => {
     //if there are no policies
@@ -86,6 +89,9 @@ AckPolicy.createForEmployee = function(policyIds, eId, conn){
 //   });
 // }
 
+/**
+ * Deletes all policyAcks for the given employee.
+ */
 AckPolicy.deleteAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_policy SET deleted=1 WHERE (eID = ?);", [eId], function(error, results){
@@ -98,6 +104,9 @@ AckPolicy.deleteAllForEmployee = function(eId, conn){
   });
 }
 
+/**
+ * Restores all policyAcks for the given employee. 
+ */
 AckPolicy.restoreAllForEmployee = function(eId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_policy SET deleted=0 WHERE (eID = ?);", [eId], function(error, results){
@@ -110,6 +119,9 @@ AckPolicy.restoreAllForEmployee = function(eId, conn){
   });
 }
 
+/**
+ * Unacknowledges a policy for all employees. 
+ */
 AckPolicy.unackPolicy = function(policyId, conn){
   return new Promise((resolve, reject) => {
     conn.query("UPDATE ack_policy SET ack=0 WHERE (policyID = ?);", [policyId], function(error, results) {
@@ -242,6 +254,9 @@ AckPolicy.makeDeptsIrrelevant = function(irrelevantDepts, policyId, conn) {
   });
 }
 
+/**
+ * Gets the number of acknowledgements that are still needed for each survey.
+ */
 AckPolicy.getAckNeeded = function(policies, conn){
   return new Promise((resolve, reject) => {
     if(policies.length == 0){
@@ -264,6 +279,9 @@ AckPolicy.getAckNeeded = function(policies, conn){
   });
 }
 
+/**
+ * Gets the number of employees that have acknowledged the policies. 
+ */
 AckPolicy.getAckCompleted = function(policies, conn){
   return new Promise((resolve, reject) => {
     if(policies.length == 0){
@@ -286,6 +304,9 @@ AckPolicy.getAckCompleted = function(policies, conn){
   });
 }
 
+/**
+ * Get the list of employees that still need to acknowledge a policy. 
+ */
 AckPolicy.getUnackEmployees = function(policyId, conn) {
   return new Promise((resolve, reject) => {
     conn.query("SELECT eID from ack_policy WHERE (policyID = ?) AND (deleted=0) AND (ack=0);", [policyId], function(error, results){

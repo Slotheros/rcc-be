@@ -250,6 +250,11 @@ function csvComparison(res, csvData, emails, phones) {
   });
 }
 
+/**
+ * Sets an employee's status to active(1). Any acknowledgements that the employee
+ * has will be reactivated, and new acknowledgements will be made for any policies
+ * or surveys that have been created since the employee was last active. 
+ */
 router.post('/setActive', function(req, res){
   var eId = req.body.eId; 
   var deptId = req.body.deptId; 
@@ -281,6 +286,9 @@ router.post('/setActive', function(req, res){
   });
 });
 
+/**
+ * Sets an employees status to inactive(0). Soft delete acknowledgements for the employee. 
+ */
 router.post('/setInactive', function(req, res){
   var eId = req.body.eId; 
 
@@ -401,6 +409,13 @@ router.post('/editUser', function(req, res){
   });
 });
 
+/**
+ * Resets the given users password. Has 2 branches: 
+ * 1) if the user has forgotten password and requests a new one
+ *   --> sends email with new password to the user
+ * 2) user provides the new password
+ *   --> changes the password in the database
+ */
 router.post('/resetPassword', function(req, res){
   var eId = req.body.eId ? req.body.eId : null; 
   var password = req.body.password ? req.body.password : null; 
